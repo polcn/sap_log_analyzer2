@@ -161,10 +161,16 @@ Each component has a specific role in transforming raw SAP log data into actiona
 - **Medium Risk**: Update operations not otherwise categorized as high risk
 - **Low Risk**: Display-only operations with no changes
 
-**Enhanced Risk Factors**: 
+**Enhanced Risk Factors**:
 - Risk factors now include detailed descriptions of SAP elements
 - Example: "Update operation - Existing record modified in LIPS (Delivery Item) table"
 - Provides reviewers with immediate context about what each SAP element represents
+
+**Field Description System**:
+- Complete coverage of field descriptions through comprehensive dictionaries
+- Format: "FIELD_NAME": "Field Name - Description of its purpose"
+- Organized by functional categories (authorization, financial, vendor, etc.)
+- Ensures all fields in reports have meaningful descriptions for reviewers
 
 **Detailed Risk Evaluation Logic**:
 See detailed breakdown in the [Risk Assessment Logic](#risk-assessment-logic) section.
@@ -283,16 +289,49 @@ The risk assessment relies on three key configuration lists that define what is 
 - Compares elements against the existing dictionaries of descriptions
 - Reports elements without descriptions and their frequency of occurrence
 
+**Technical Implementation**:
+- Uses dictionary comprehension to extract and analyze unique field values
+- Case-insensitive comparison with dictionary keys ensures consistent matching
+- Skips null values and non-string fields for robustness
+- Optimized to handle large datasets efficiently
+
 **Features**:
 - Lists all SAP elements without descriptions
 - Shows the most frequent undescribed elements to prioritize additions
 - Generates code snippets ready to copy into the risk assessment module
 - Helps maintain complete coverage of SAP element descriptions
+- Enhanced version provides comprehensive field statistics
 
 **Output**:
 - Lists of tables, transaction codes, and fields without descriptions
 - Top 10 most frequent elements without descriptions
 - Dictionary code snippets formatted for easy addition to the risk assessment module
+- Comprehensive field analysis with frequency statistics
+
+### 1.5 monitor_new_fields.py
+
+**Purpose**: Lightweight, focused tool for monitoring the field description coverage.
+
+**Key Functions**:
+- `log_message(message, level)`: Formats log messages with timestamps and severity
+- `monitor_fields(file_path)`: Core function that analyzes field description coverage
+
+**Technical Implementation**:
+- Directly imports field descriptions from risk assessment module
+- Uses set operations to efficiently detect missing descriptions
+- Provides statistics on coverage percentage
+- Returns structured data for automated integration
+
+**Features**:
+- Simplified interface focused specifically on field descriptions
+- Low-overhead execution for quick verification
+- Clear template generation for missing fields
+- Exit code indicates status (0 = success, all fields covered; 1 = missing descriptions)
+
+**Integration Points**:
+- Can be integrated into CI/CD pipelines to verify description coverage
+- Can be scheduled to run automatically after data processing
+- Can be extended to send notifications when coverage drops below threshold
 
 ### 2. update_sap_descriptions.py
 
