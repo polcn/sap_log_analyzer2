@@ -80,6 +80,18 @@ def find_latest_file(pattern):
         return None
     return max(files, key=os.path.getmtime)
 
+def clean_whitespace(df):
+    """Clean whitespace from all string columns in the dataframe."""
+    log_message("Cleaning whitespace from string columns...")
+    
+    for col in df.columns:
+        if df[col].dtype == 'object':  # Only process string/object columns
+            df[col] = df[col].astype(str).str.strip()
+            
+    # Report the cleaning
+    log_message(f"Cleaned whitespace from {sum(df.dtypes == 'object')} string columns")
+    return df
+
 def process_sm20(input_file, output_file):
     """Process SM20 file with enhanced data preparation."""
     try:
@@ -94,6 +106,9 @@ def process_sm20(input_file, output_file):
         # Convert column headers to UPPERCASE
         df.columns = [col.strip().upper() for col in df.columns]
         log_message(f"Converted {len(df.columns)} column headers to UPPERCASE")
+        
+        # Clean whitespace from all string columns
+        df = clean_whitespace(df)
         
         # Check for important fields
         important_sm20_fields = [
@@ -164,6 +179,9 @@ def process_cdhdr(input_file, output_file):
         df.columns = [col.strip().upper() for col in df.columns]
         log_message(f"Converted {len(df.columns)} column headers to UPPERCASE")
         
+        # Clean whitespace from all string columns
+        df = clean_whitespace(df)
+        
         # Check for important fields
         important_cdhdr_fields = [
             CDHDR_USER_COL, CDHDR_DATE_COL, CDHDR_TIME_COL, CDHDR_TCODE_COL,
@@ -233,6 +251,9 @@ def process_cdpos(input_file, output_file):
         # Convert column headers to UPPERCASE
         df.columns = [col.strip().upper() for col in df.columns]
         log_message(f"Converted {len(df.columns)} column headers to UPPERCASE")
+        
+        # Clean whitespace from all string columns
+        df = clean_whitespace(df)
         
         # Check for important fields
         important_cdpos_fields = [

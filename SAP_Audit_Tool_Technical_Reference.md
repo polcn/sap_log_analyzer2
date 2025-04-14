@@ -8,11 +8,12 @@ This technical reference provides an in-depth analysis of the SAP audit tool sys
 3. [Script Detailed Analysis](#script-detailed-analysis)
 4. [Risk Assessment Logic](#risk-assessment-logic)
 5. [Configuration Parameters](#configuration-parameters)
-6. [Troubleshooting Guide](#troubleshooting-guide)
+6. [Maintenance Tools](#maintenance-tools)
+7. [Troubleshooting Guide](#troubleshooting-guide)
 
 ## System Architecture
 
-The SAP audit system consists of five Python scripts that work together in a modular pipeline:
+The SAP audit system consists of seven Python scripts that work together in a modular pipeline:
 
 ```
 Raw SAP Export Files 
@@ -27,9 +28,12 @@ Session Timeline (SAP_Session_Timeline.xlsx)
        ↓
 [sap_audit_tool.py] → Imports modules for specialized functions
        ↓                ↙                       ↘
-[sap_audit_tool_risk_assessment_updated.py]  [sap_audit_tool_output.py]
+[sap_audit_tool_risk_assessment.py]  [sap_audit_tool_output.py]
        ↓
 Final Audit Report (SAP_Audit_Report.xlsx)
+
+Maintenance Tools:
+[find_missing_descriptions.py] [update_sap_descriptions.py]
 ```
 
 Each component has a specific role in transforming raw SAP log data into actionable audit insights.
@@ -135,20 +139,32 @@ Each component has a specific role in transforming raw SAP log data into actiona
 - `sap_audit_tool_risk_assessment_updated.py`
 - `sap_audit_tool_output.py`
 
-### 4. sap_audit_tool_risk_assessment_updated.py
+### 4. sap_audit_tool_risk_assessment.py
 
-**Purpose**: Evaluates the risk level of SAP activities.
+**Purpose**: Evaluates the risk level of SAP activities with enhanced descriptive information.
 
 **Key Functions**:
 - `get_sensitive_tables()`: Defines tables that contain security-critical data
+- `get_sensitive_table_descriptions()`: Provides detailed descriptions for sensitive tables
+- `get_common_table_descriptions()`: Provides descriptions for common SAP tables
+- `get_sensitive_tcodes()`: Defines transaction codes that involve high-risk operations 
+- `get_sensitive_tcode_descriptions()`: Provides detailed descriptions for sensitive transaction codes
+- `get_common_tcode_descriptions()`: Provides descriptions for common transaction codes
 - `get_critical_field_patterns()`: Defines regex patterns for sensitive fields
-- `get_sensitive_tcodes()`: Defines transaction codes that involve high-risk operations
+- `get_critical_field_pattern_descriptions()`: Provides detailed descriptions for field patterns
+- `get_common_field_descriptions()`: Provides descriptions for common SAP fields
+- `get_table_info()`, `get_tcode_info()`, `get_field_info()`: Helper functions that format descriptive information
 - `assess_risk_session(session_data)`: Main risk evaluation function for session-based analysis
 
 **Risk Categories**:
 - **High Risk**: Activities involving sensitive tables, fields, or transaction codes
 - **Medium Risk**: Update operations not otherwise categorized as high risk
 - **Low Risk**: Display-only operations with no changes
+
+**Enhanced Risk Factors**: 
+- Risk factors now include detailed descriptions of SAP elements
+- Example: "Update operation - Existing record modified in LIPS (Delivery Item) table"
+- Provides reviewers with immediate context about what each SAP element represents
 
 **Detailed Risk Evaluation Logic**:
 See detailed breakdown in the [Risk Assessment Logic](#risk-assessment-logic) section.
@@ -226,15 +242,17 @@ An activity is assigned **LOW RISK** if:
 - Typically these are display-only operations on non-sensitive data
 
 ### Risk Factor Documentation
-For each identified risk, the specific factor is documented in the 'risk_factors' column:
+For each identified risk, the specific factor is documented in the 'risk_factors' column with enhanced descriptive information:
 
-- "Sensitive table; " - When a sensitive table is accessed
-- "Sensitive transaction code; " - When a high-risk tcode is used
-- "Critical field (Password field); " - When a sensitive field is changed
-- "Display transaction with changes; " - When display actually includes changes
-- "Insert operation; " - For record creation
-- "Delete operation; " - For record deletion
-- "Update operation; " - For record modification
+- Sensitive table access: "Vendor master - Contains vendor master data (Table: LFA1)"
+- Sensitive transaction code: "Data browser - Direct table data access (TCode: SE16)"
+- Critical field changes: "Password/credential modification (Field: PASSWORD)"
+- Display with changes: "Display transaction with changes (TCode: VA03 (Display Sales Order))"
+- Insert operations: "Insert operation - New record created in ADRU (Address Data Universe) table"
+- Delete operations: "Delete operation - Record removed from LIKP (Delivery Header) table"
+- Update operations: "Update operation - Existing record modified in LIPS (Delivery Item) table"
+
+The enhanced descriptions provide immediate context about what each SAP element represents, making the audit report more useful for reviewers without deep SAP expertise.
 
 ### Configuration Lists
 
@@ -252,6 +270,53 @@ The risk assessment relies on three key configuration lists that define what is 
 
 3. **Sensitive Transaction Codes** (from `get_sensitive_tcodes()`)
    - Organized by category (debugging, user management, etc.)
+
+## Maintenance Tools
+
+### 1. find_missing_descriptions.py
+
+**Purpose**: Identifies SAP elements (tables, fields, transaction codes) that don't have descriptions in the dictionaries.
+
+**Key Functions**:
+- Imports the dictionaries from the risk assessment module
+- Analyzes the session timeline file to extract unique SAP elements
+- Compares elements against the existing dictionaries of descriptions
+- Reports elements without descriptions and their frequency of occurrence
+
+**Features**:
+- Lists all SAP elements without descriptions
+- Shows the most frequent undescribed elements to prioritize additions
+- Generates code snippets ready to copy into the risk assessment module
+- Helps maintain complete coverage of SAP element descriptions
+
+**Output**:
+- Lists of tables, transaction codes, and fields without descriptions
+- Top 10 most frequent elements without descriptions
+- Dictionary code snippets formatted for easy addition to the risk assessment module
+
+### 2. update_sap_descriptions.py
+
+**Purpose**: Provides a streamlined workflow for maintaining SAP element descriptions.
+
+**Key Functions**:
+- `analyze_session_timeline()`: Examines session data for elements without descriptions
+- `update_descriptions()`: Provides guidance on how to update the dictionaries
+
+**Command-Line Interface**:
+- `--analyze`: Default mode that analyzes the session timeline
+- `--update`: Shows instructions for updating the descriptions
+
+**Workflow Support**:
+1. Discovers elements without descriptions
+2. Provides templates for adding descriptions
+3. Makes the maintenance process simpler when new SAP elements appear
+
+**Integration**:
+- Uses the same dictionary structures as the risk assessment module
+- Reads from the same session timeline file used by the main tool
+- Designed to be run whenever new SAP export data is processed
+
+The maintenance tools make it easy to keep the risk assessment module's descriptive capabilities up to date. As new SAP logs are processed, any new tables, fields, or transaction codes can be quickly identified and descriptions added to enhance the audit report's usefulness.
 
 ## Configuration Parameters
 

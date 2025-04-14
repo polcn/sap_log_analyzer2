@@ -12,7 +12,7 @@ Usage:
   python sap_audit_tool.py [input_dir] [output_file]
 
 Dependencies:
-  - sap_audit_tool_risk_assessment_updated.py
+  - sap_audit_tool_risk_assessment.py
   - sap_audit_tool_output.py
   - SAP Log Session Merger.py (functionality)
 """
@@ -26,15 +26,14 @@ import pandas as pd
 
 # Import modules for risk assessment and output generation
 try:
-    from sap_audit_tool_risk_assessment_updated import (
+    from sap_audit_tool_risk_assessment import (
         get_sensitive_tables, get_critical_field_patterns, get_sensitive_tcodes,
-        assess_risk_session, assess_risk_legacy
+        assess_risk_session, custom_field_risk_assessment, log_message
     )
     from sap_audit_tool_output import generate_excel_output
-    MODULAR_MODE = True
-    print("Running in modular mode with separate risk assessment and output modules")
+    print("Using SAP Audit Risk Assessment module")
 except ImportError:
-    print("Error: Required modules not found. Please ensure sap_audit_tool_risk_assessment_updated.py and sap_audit_tool_output.py are in the same directory.")
+    print("Error: Required modules not found. Please ensure sap_audit_tool_risk_assessment.py and sap_audit_tool_output.py are in the same directory.")
     sys.exit(1)
 
 # --- Configuration ---
@@ -73,12 +72,6 @@ SESSION_DESCRIPTION_COL = 'Description'
 SESSION_OBJECT_COL = 'Object'
 SESSION_OBJECT_ID_COL = 'Object_ID'
 SESSION_DOC_NUMBER_COL = 'Doc_Number'
-
-# --- Utility Functions ---
-def log_message(message, level="INFO"):
-    """Log a message with timestamp and level."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] {level}: {message}")
 
 def load_session_timeline():
     """
@@ -231,9 +224,9 @@ def main():
             session_df.loc[:, "risk_factors"] = "Risk assessment failed"
         
         # Step 4: Generate Excel output with session data
-        # Sort by risk level (High first) and then by session ID and timestamp
+        # Sort chronologically by session ID first, then by timestamp within session, then by risk level
         session_df['Risk_Sort'] = session_df['risk_level'].map({'High': 0, 'Medium': 1, 'Low': 2, 'Unknown': 3})
-        session_df = session_df.sort_values(['Risk_Sort', SESSION_ID_WITH_DATE_COL, SESSION_DATETIME_COL], 
+        session_df = session_df.sort_values([SESSION_ID_WITH_DATE_COL, SESSION_DATETIME_COL, 'Risk_Sort'], 
                                            ascending=[True, True, True])
         session_df = session_df.drop('Risk_Sort', axis=1)
         
