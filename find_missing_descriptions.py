@@ -3,9 +3,8 @@ import sys
 import os
 
 # Import the dictionaries from the risk assessment module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from OneDrive.Documents.Python.sap_audit_tool_risk_assessment import (
-    get_common_table_descriptions, 
+from sap_audit_tool_risk_assessment import (
+    get_common_table_descriptions,
     get_sensitive_table_descriptions,
     get_common_tcode_descriptions,
     get_sensitive_tcode_descriptions,
@@ -28,7 +27,7 @@ all_tcodes = {**common_tcodes, **sensitive_tcodes}
 all_fields = common_fields
 
 def analyze_timeline():
-    """Analyze the session timeline and identify missing descriptions."""
+    """Analyze the session timeline and identify all fields with their descriptions status."""
     print(f"Reading file: {file_path}")
     df = pd.read_excel(file_path, sheet_name='Session_Timeline')
     print(f"Total rows: {len(df)}")
@@ -38,47 +37,65 @@ def analyze_timeline():
     tcodes = df['TCode'].dropna().astype(str).str.strip().unique()
     fields = df['Field'].dropna().astype(str).str.strip().unique()
     
+    # Remove 'nan' values
+    tables = [t for t in tables if t != "nan" and t.strip()]
+    tcodes = [t for t in tcodes if t != "nan" and t.strip()]
+    fields = [f for f in fields if f != "nan" and f.strip()]
+    
     print(f"\nFound {len(tables)} unique tables")
     print(f"Found {len(tcodes)} unique transaction codes")
     print(f"Found {len(fields)} unique fields")
     
-    # Find tables without descriptions
-    missing_tables = []
-    for table in tables:
-        if table.upper() not in all_tables and table.strip() and table != "nan":
-            missing_tables.append(table)
-    
-    # Find TCodes without descriptions
-    missing_tcodes = []
-    for tcode in tcodes:
-        if tcode.upper() not in all_tcodes and tcode.strip() and tcode != "nan":
-            missing_tcodes.append(tcode)
-    
-    # Find fields without descriptions
-    missing_fields = []
-    for field in fields:
-        if field.upper() not in all_fields and field.strip() and field != "nan":
-            missing_fields.append(field)
-    
-    # Print results
-    print(f"\nTables without descriptions ({len(missing_tables)}):")
-    for i, table in enumerate(sorted(missing_tables), 1):
-        print(f"{i}. {table}")
-    
-    print(f"\nTransaction codes without descriptions ({len(missing_tcodes)}):")
-    for i, tcode in enumerate(sorted(missing_tcodes), 1):
-        print(f"{i}. {tcode}")
-    
-    print(f"\nFields without descriptions ({len(missing_fields)}):")
-    for i, field in enumerate(sorted(missing_fields), 1):
-        print(f"{i}. {field}")
-    
-    # Also find the most frequent tables, TCodes, and fields that don't have descriptions
-    # to prioritize which ones to add first
-    
+    # Get frequency counts
     table_counts = df['Table'].value_counts()
     tcode_counts = df['TCode'].value_counts()
     field_counts = df['Field'].value_counts()
+    
+    # Find tables without descriptions
+    missing_tables = []
+    tables_with_desc = []
+    for table in tables:
+        if table.upper() not in all_tables:
+            missing_tables.append(table)
+        else:
+            tables_with_desc.append(table)
+    
+    # Find TCodes without descriptions
+    missing_tcodes = []
+    tcodes_with_desc = []
+    for tcode in tcodes:
+        if tcode.upper() not in all_tcodes:
+            missing_tcodes.append(tcode)
+        else:
+            tcodes_with_desc.append(tcode)
+    
+    # Find fields without descriptions
+    missing_fields = []
+    fields_with_desc = []
+    for field in fields:
+        if field.upper() not in all_fields:
+            missing_fields.append(field)
+        else:
+            fields_with_desc.append(field)
+    
+    # Sort all by frequency
+    sorted_all_fields = sorted([(field, field_counts.get(field, 0)) for field in fields], 
+                               key=lambda x: x[1], reverse=True)
+    
+    # Print comprehensive field analysis
+    print("\n=== COMPREHENSIVE FIELD ANALYSIS ===")
+    print(f"\nTotal unique fields: {len(fields)}")
+    print(f"Fields with descriptions: {len(fields_with_desc)}")
+    print(f"Fields without descriptions: {len(missing_fields)}")
+    
+    print("\n--- ALL FIELDS BY FREQUENCY ---")
+    for i, (field, count) in enumerate(sorted_all_fields, 1):
+        has_desc = "✓" if field.upper() in all_fields else "✗"
+        desc = all_fields.get(field.upper(), "No description")
+        if has_desc == "✓":
+            print(f"{i}. {field} ({count} occurrences) {has_desc} - {desc.split(' - ')[0]}")
+        else:
+            print(f"{i}. {field} ({count} occurrences) {has_desc}")
     
     # Filter to only those without descriptions
     missing_table_counts = {t: table_counts.get(t, 0) for t in missing_tables}
@@ -91,34 +108,18 @@ def analyze_timeline():
     sorted_fields = sorted(missing_field_counts.items(), key=lambda x: x[1], reverse=True)
     
     # Print top 10 most frequent items without descriptions
-    print("\n--- TOP 10 MOST FREQUENT MISSING DESCRIPTIONS ---")
-    
-    print("\nTop tables without descriptions:")
-    for i, (table, count) in enumerate(sorted_tables[:10], 1):
-        print(f"{i}. {table} ({count} occurrences)")
-    
-    print("\nTop transaction codes without descriptions:")
-    for i, (tcode, count) in enumerate(sorted_tcodes[:10], 1):
-        print(f"{i}. {tcode} ({count} occurrences)")
-    
-    print("\nTop fields without descriptions:")
-    for i, (field, count) in enumerate(sorted_fields[:10], 1):
-        print(f"{i}. {field} ({count} occurrences)")
+    if missing_fields:
+        print("\n--- FIELDS MISSING DESCRIPTIONS ---")
+        for i, (field, count) in enumerate(sorted_fields, 1):
+            print(f"{i}. {field} ({count} occurrences)")
     
     # Generate dictionary code snippets for the most common missing items
     print("\n--- DICTIONARY CODE SNIPPETS ---")
     
-    print("\n# Table descriptions to add:")
-    for table, count in sorted_tables[:20]:  # Top 20
-        print(f'    "{table}": "{table} - [Add description here]",')
-    
-    print("\n# Transaction code descriptions to add:")
-    for tcode, count in sorted_tcodes[:20]:  # Top 20
-        print(f'    "{tcode}": "{tcode} - [Add description here]",')
-    
-    print("\n# Field descriptions to add:")
-    for field, count in sorted_fields[:20]:  # Top 20
-        print(f'    "{field}": "{field} - [Add description here]",')
+    if missing_fields:
+        print("\n# Field descriptions to add:")
+        for field, count in sorted_fields:  # All missing fields
+            print(f'    "{field}": "{field} - [Add description here]",')
 
 if __name__ == "__main__":
     analyze_timeline()
