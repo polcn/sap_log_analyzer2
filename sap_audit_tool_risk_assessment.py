@@ -355,10 +355,14 @@ def get_common_field_descriptions():
         "MATNR": "Material Number - Identifier for material master",
         "KWMENG": "Order Quantity - Amount ordered in sales unit",
         
-        # Purchase fields
-        "EBELN": "Purchase Document Number - Identifies purchasing documents",
-        "LIFNR": "Vendor Number - Identifier for vendor account",
-        "EBELP": "Purchase Document Item - Line item in purchase document",
+          # Purchase fields
+          "EBELN": "Purchase Document Number - Identifies purchasing documents",
+          "LIFNR": "Vendor Number - Identifier for vendor account",
+          "KRED": "Vendor Account Number - Unique identifier for vendor master records",
+          "KREDI": "Alternate Vendor Account - Alternative vendor identification",
+          "KTOKK": "Vendor Account Group - Categorizes vendor accounts by type",
+          "XCPDK": "One-time Account Indicator - Identifies vendor as one-time account",
+          "EBELP": "Purchase Document Item - Line item in purchase document",
         
         # Material fields
         "WERKS": "Plant - Manufacturing location",
