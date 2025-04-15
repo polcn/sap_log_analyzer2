@@ -37,7 +37,7 @@ except ImportError:
     sys.exit(1)
 
 # --- Configuration ---
-VERSION = "4.0.0"
+VERSION = "4.1.0"  # Updated for Field Description System enhancements (April 2025)
 
 # Get the script directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -225,10 +225,23 @@ def main():
         
         # Step 4: Generate Excel output with session data
         # Sort chronologically by session ID first, then by timestamp within session, then by risk level
+        # Extract the numeric part of session IDs for proper numerical sorting
+        log_message("Preparing chronological sorting...")
+        
+        # Extract Session IDs from "Session ID with Date" format (e.g., "S0001 (2025-04-10)")
+        session_df['Session_ID_Numeric'] = session_df[SESSION_ID_WITH_DATE_COL].str.extract(r'S(\d+)').astype(int)
+        
+        # Create a risk level sort key (High=0, Medium=1, Low=2, Unknown=3)
         session_df['Risk_Sort'] = session_df['risk_level'].map({'High': 0, 'Medium': 1, 'Low': 2, 'Unknown': 3})
-        session_df = session_df.sort_values([SESSION_ID_WITH_DATE_COL, SESSION_DATETIME_COL, 'Risk_Sort'], 
+        
+        # Sort by numerical session ID, then by timestamp within session, then by risk level
+        session_df = session_df.sort_values(['Session_ID_Numeric', SESSION_DATETIME_COL, 'Risk_Sort'], 
                                            ascending=[True, True, True])
-        session_df = session_df.drop('Risk_Sort', axis=1)
+        
+        # Drop the temporary columns used for sorting
+        session_df = session_df.drop(['Session_ID_Numeric', 'Risk_Sort'], axis=1)
+        
+        log_message("Sorting complete. Data ordered chronologically by session number.")
         
         # Generate Excel output with session data (empty dataframes for legacy mode)
         generate_excel_output(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), session_df, OUTPUT_FILE)

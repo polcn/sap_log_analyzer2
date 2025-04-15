@@ -40,6 +40,10 @@ SM20_TCODE_COL = 'SOURCE TA'
 SM20_ABAP_SOURCE_COL = 'ABAP SOURCE'
 SM20_MSG_COL = 'AUDIT LOG MSG. TEXT'
 SM20_NOTE_COL = 'NOTE'
+# SM20 Debugging/RFC Analysis fields
+SM20_VAR_FIRST_COL = 'FIRST VARIABLE VALUE FOR EVENT'
+SM20_VAR_2_COL = 'VARIABLE 2'
+SM20_VAR_DATA_COL = 'VARIABLE DATA FOR MESSAGE'
 
 # CDHDR Change Document Header columns
 CDHDR_USER_COL = 'USER'
@@ -113,7 +117,8 @@ def process_sm20(input_file, output_file):
         # Check for important fields
         important_sm20_fields = [
             SM20_USER_COL, SM20_DATE_COL, SM20_TIME_COL, SM20_TCODE_COL, 
-            SM20_MSG_COL, SM20_EVENT_COL, SM20_ABAP_SOURCE_COL, SM20_NOTE_COL
+            SM20_MSG_COL, SM20_EVENT_COL, SM20_ABAP_SOURCE_COL, SM20_NOTE_COL,
+            SM20_VAR_FIRST_COL, SM20_VAR_2_COL, SM20_VAR_DATA_COL
         ]
         
         for field in important_sm20_fields:
@@ -181,6 +186,29 @@ def process_cdhdr(input_file, output_file):
         
         # Clean whitespace from all string columns
         df = clean_whitespace(df)
+        
+        # Handle field mapping for alternate field names that might be in raw exports
+        field_mapping = {
+            'VARIABL_1': SM20_VAR_FIRST_COL,
+            'VARIABLE_1': SM20_VAR_FIRST_COL,
+            'VARIABLE1': SM20_VAR_FIRST_COL,
+            'VAR_1': SM20_VAR_FIRST_COL,
+            'VARIABL_2': SM20_VAR_2_COL,
+            'VARIABLE_2': SM20_VAR_2_COL,
+            'VARIABLE2': SM20_VAR_2_COL,
+            'VAR_2': SM20_VAR_2_COL,
+            'VARIABL_D': SM20_VAR_DATA_COL,
+            'VARIABLE_D': SM20_VAR_DATA_COL,
+            'VARIABLED': SM20_VAR_DATA_COL,
+            'VAR_D': SM20_VAR_DATA_COL,
+            'VAR_DATA': SM20_VAR_DATA_COL
+        }
+        
+        # Rename columns if they exist with different names
+        for old_name, new_name in field_mapping.items():
+            if old_name in df.columns and new_name not in df.columns:
+                df[new_name] = df[old_name]
+                log_message(f"Mapped {old_name} to {new_name}")
         
         # Check for important fields
         important_cdhdr_fields = [
