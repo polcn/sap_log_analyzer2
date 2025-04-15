@@ -504,16 +504,16 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
             # Add a chart
             chart = wb.add_chart({'type': 'pie'})
             
-            # Configure the chart
+            # Configure the chart - FIXED: Only include risk rows (excluding Total)
             chart.add_series({
                 'name': 'Risk Distribution',
-                'categories': ['Summary', 1, 0, 4, 0],  # Updated range to include all 5 rows
-                'values': ['Summary', 1, 1, 4, 1],      # Updated range to include all 5 rows
+                'categories': ['Summary', 1, 0, 4, 0],  # Include rows 1-4 (Critical, High, Medium, Low)
+                'values': ['Summary', 1, 1, 4, 1],      # Include corresponding values
                 'points': [
-                    {'fill': {'color': CRITICAL_RISK_COLOR}},  # Added Critical
-                    {'fill': {'color': HIGH_RISK_COLOR}},
-                    {'fill': {'color': MEDIUM_RISK_COLOR}},
-                    {'fill': {'color': LOW_RISK_COLOR}}
+                    {'fill': {'color': CRITICAL_RISK_COLOR}},  # Critical - Purple
+                    {'fill': {'color': HIGH_RISK_COLOR}},      # High - Red
+                    {'fill': {'color': MEDIUM_RISK_COLOR}},    # Medium - Yellow
+                    {'fill': {'color': LOW_RISK_COLOR}}        # Low - Green
                 ]
             })
             
