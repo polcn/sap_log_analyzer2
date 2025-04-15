@@ -350,7 +350,4 @@ The system provides detailed logging:
 
 ## Security Notes
 
-- **Sensitive Data**: Log files may contain sensitive business data
-- **Storage**: Secure both input files and generated reports
-- **Access Control**: Restrict access to the tool and its outputs
-- **Interpretation**: Risk assessments should be reviewed by qualified personnel
+ **Interpretation**: Risk assessments should be reviewed by qualified personnel
