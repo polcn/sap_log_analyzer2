@@ -40,6 +40,10 @@ SM20_TCODE_COL = 'SOURCE TA'
 SM20_ABAP_SOURCE_COL = 'ABAP SOURCE'
 SM20_MSG_COL = 'AUDIT LOG MSG. TEXT'
 SM20_NOTE_COL = 'NOTE'
+# SM20 Debugging/RFC Analysis fields
+SM20_VAR_FIRST_COL = 'FIRST VARIABLE VALUE FOR EVENT'
+SM20_VAR_2_COL = 'VARIABLE 2'
+SM20_VAR_DATA_COL = 'VARIABLE DATA FOR MESSAGE'
 
 # CDHDR Change Document Header columns
 CDHDR_USER_COL = 'USER'
@@ -103,6 +107,9 @@ def process_sm20(input_file, output_file):
         original_columns = df.columns.tolist()
         log_message(f"Original columns: {len(original_columns)}")
         
+        # Store original column names for later mapping
+        original_col_names = df.columns.tolist()
+        
         # Convert column headers to UPPERCASE
         df.columns = [col.strip().upper() for col in df.columns]
         log_message(f"Converted {len(df.columns)} column headers to UPPERCASE")
@@ -110,15 +117,55 @@ def process_sm20(input_file, output_file):
         # Clean whitespace from all string columns
         df = clean_whitespace(df)
         
+        # Handle field mapping for SM20 columns that may have different names in different extracts
+        # This is based on SAP's dynamic column behavior where field labels can change based on
+        # GUI layout, language, and kernel patch level
+        field_mapping = {
+            # Transaction code variations
+            'TCODE': SM20_TCODE_COL,
+            'TRANSACTION': SM20_TCODE_COL,
+            'TRANSACTION CODE': SM20_TCODE_COL,
+            
+            # ABAP program variations
+            'PROGRAM': SM20_ABAP_SOURCE_COL,
+            
+            # Variable field variations - based on SAP export behavior
+            # First variable
+            'FIRST VARIABLE': SM20_VAR_FIRST_COL,
+            'VARIABLE 1': SM20_VAR_FIRST_COL,
+            'VARIABLE_1': SM20_VAR_FIRST_COL,
+            'VAR1': SM20_VAR_FIRST_COL,
+            
+            # Second variable/data field - these are actually the same field with different labels
+            'VARIABLE 2': SM20_VAR_DATA_COL,  # In March extract
+            'VARIABLE DATA': SM20_VAR_DATA_COL,  # In January extract
+            'VARIABLE_2': SM20_VAR_DATA_COL,
+            'VAR2': SM20_VAR_DATA_COL,
+            
+            # Third variable field - can be VARIABLE 3 in some extracts
+            'VARIABLE 3': SM20_VAR_DATA_COL,  # Also maps to VAR_DATA as per SAP's behavior
+            'VARIABLE_3': SM20_VAR_DATA_COL,
+            'VAR3': SM20_VAR_DATA_COL
+        }
+        
+        # Apply field mapping - only if target column doesn't already exist
+        for old_name, new_name in field_mapping.items():
+            if old_name in df.columns and new_name not in df.columns:
+                df[new_name] = df[old_name]
+                log_message(f"Mapped SM20 column {old_name} → {new_name}")
+        
         # Check for important fields
         important_sm20_fields = [
             SM20_USER_COL, SM20_DATE_COL, SM20_TIME_COL, SM20_TCODE_COL, 
-            SM20_MSG_COL, SM20_EVENT_COL, SM20_ABAP_SOURCE_COL, SM20_NOTE_COL
+            SM20_MSG_COL, SM20_EVENT_COL, SM20_ABAP_SOURCE_COL, SM20_NOTE_COL,
+            SM20_VAR_FIRST_COL, SM20_VAR_2_COL, SM20_VAR_DATA_COL
         ]
         
+        # Add empty columns for any missing fields to ensure consistent schema
         for field in important_sm20_fields:
             if field not in df.columns:
-                log_message(f"Warning: Important field '{field}' not found in SM20 data", "WARNING")
+                log_message(f"Warning: Important field '{field}' not found in SM20 data - adding empty column", "WARNING")
+                df[field] = ""  # Add empty column
         
         # Filter out excluded fields
         for field in EXCLUDE_FIELDS:
@@ -182,6 +229,51 @@ def process_cdhdr(input_file, output_file):
         # Clean whitespace from all string columns
         df = clean_whitespace(df)
         
+        # Handle field mapping for alternate field names that might be in raw exports
+        # Enhanced based on the SAP's variable field dynamics across different exports
+        field_mapping = {
+            # Transaction code variations
+            'TRANSACTION CODE': CDHDR_TCODE_COL,
+            'SOURCE TA': CDHDR_TCODE_COL,
+            
+            # Variable field variations
+            # First variable
+            'FIRST VARIABLE VALUE FOR EVENT': SM20_VAR_FIRST_COL,
+            'FIRST VARIABLE': SM20_VAR_FIRST_COL,
+            'VARIABLE 1': SM20_VAR_FIRST_COL,
+            'VARIABLE_1': SM20_VAR_FIRST_COL,
+            'VARIABLE1': SM20_VAR_FIRST_COL,
+            'VAR_1': SM20_VAR_FIRST_COL,
+            'VAR1': SM20_VAR_FIRST_COL,
+            
+            # Second variable/data field - these are the same field with different labels
+            'VARIABLE 2': SM20_VAR_DATA_COL,  # March extract
+            'VARIABLE DATA': SM20_VAR_DATA_COL,  # January extract
+            'VARIABLE DATA FOR MESSAGE': SM20_VAR_DATA_COL,  # February extract
+            'VARIABLE_2': SM20_VAR_DATA_COL,
+            'VARIABLE2': SM20_VAR_DATA_COL,
+            'VAR_2': SM20_VAR_DATA_COL,
+            'VAR2': SM20_VAR_DATA_COL,
+            'VARIABL_D': SM20_VAR_DATA_COL,
+            'VARIABLE_D': SM20_VAR_DATA_COL,
+            'VARIABLED': SM20_VAR_DATA_COL,
+            'VAR_D': SM20_VAR_DATA_COL,
+            'VAR_DATA': SM20_VAR_DATA_COL,
+            
+            # Third variable field
+            'VARIABLE 3': SM20_VAR_DATA_COL,  # Maps to VAR_DATA as per SAP behavior
+            'VARIABLE_3': SM20_VAR_DATA_COL,
+            'VARIABLE3': SM20_VAR_DATA_COL,
+            'VAR_3': SM20_VAR_DATA_COL,
+            'VAR3': SM20_VAR_DATA_COL
+        }
+        
+        # Rename columns if they exist with different names
+        for old_name, new_name in field_mapping.items():
+            if old_name in df.columns and new_name not in df.columns:
+                df[new_name] = df[old_name]
+                log_message(f"Mapped {old_name} to {new_name}")
+        
         # Check for important fields
         important_cdhdr_fields = [
             CDHDR_USER_COL, CDHDR_DATE_COL, CDHDR_TIME_COL, CDHDR_TCODE_COL,
@@ -189,9 +281,11 @@ def process_cdhdr(input_file, output_file):
             CDHDR_CHANGE_FLAG_COL
         ]
         
+        # Add empty columns for any missing fields to ensure consistent schema
         for field in important_cdhdr_fields:
             if field not in df.columns:
-                log_message(f"Warning: Important field '{field}' not found in CDHDR data", "WARNING")
+                log_message(f"Warning: Important field '{field}' not found in CDHDR data - adding empty column", "WARNING")
+                df[field] = ""  # Add empty column
         
         # Filter out excluded fields
         for field in EXCLUDE_FIELDS:
@@ -262,9 +356,11 @@ def process_cdpos(input_file, output_file):
             CDPOS_VALUE_NEW_COL, CDPOS_VALUE_OLD_COL
         ]
         
+        # Add empty columns for any missing fields to ensure consistent schema
         for field in important_cdpos_fields:
             if field not in df.columns:
-                log_message(f"Warning: Important field '{field}' not found in CDPOS data", "WARNING")
+                log_message(f"Warning: Important field '{field}' not found in CDPOS data - adding empty column", "WARNING")
+                df[field] = ""  # Add empty column
         
         # Filter out excluded fields
         for field in EXCLUDE_FIELDS:
