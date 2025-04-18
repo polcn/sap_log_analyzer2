@@ -3,6 +3,7 @@
 A comprehensive tool for analyzing SAP logs and identifying security risks in user activities.
 
 ## Version
+**4.2.0** - Dynamic Variable Field Handling (April 2025)
 **4.1.0** - Field Description System enhancements (April 2025)
 
 ## Overview
@@ -65,6 +66,11 @@ pip install pandas xlsxwriter colorama
 ## Features
 
 - **Comprehensive Data Processing**: Prepares and correlates data from SM20, CDHDR, and CDPOS logs
+- **Dynamic Variable Field Handling**: Handles inconsistent field naming across different SAP exports
+  - Maps variant column names to canonical field names
+  - Creates consistent schema regardless of input format variations
+  - Ensures reliable processing across different export formats
+  - See `dynamic_field_handling.md` for details
 - **User Session Timeline**: Creates a chronological view of user activities across log types
 - **Intelligent Risk Assessment**: Evaluates security risks based on tables, fields, and transaction codes
 - **Descriptive Risk Factors**: Provides detailed context for each flagged activity with SAP element descriptions

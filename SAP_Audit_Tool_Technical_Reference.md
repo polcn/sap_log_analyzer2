@@ -44,6 +44,12 @@ This module handles the initial processing of raw SAP export files:
   - `*_cdhdr_*.xlsx` - Change document header exports 
   - `*_cdpos_*.xlsx` - Change document item exports
 
+- **Dynamic Field Handling**:
+  - Field mapping dictionaries to handle varying column names
+  - Support for different variable field naming patterns
+  - Auto-generation of empty columns for consistent schema
+  - See detailed documentation in `dynamic_field_handling.md`
+
 - **Output Format**: CSV files with standardized column names and data formats:
   - `SM20.csv` - Processed security audit logs
   - `CDHDR.csv` - Processed change document headers
