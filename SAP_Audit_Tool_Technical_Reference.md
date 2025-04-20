@@ -1,466 +1,353 @@
-# SAP Audit Tool Technical Reference
+# SAP Audit Tool Technical Guide
 
-This technical reference provides an in-depth analysis of the SAP audit tool system, with particular focus on the evaluation logic. Use this document when troubleshooting the risk assessment functionality and understanding the overall workflow.
+## Architecture Overview
 
-## Table of Contents
-1. [System Architecture](#system-architecture)
-2. [Data Flow & Processing Pipeline](#data-flow--processing-pipeline)
-3. [Script Detailed Analysis](#script-detailed-analysis)
-4. [Risk Assessment Logic](#risk-assessment-logic)
-5. [Configuration Parameters](#configuration-parameters)
-6. [Maintenance Tools](#maintenance-tools)
-7. [Troubleshooting Guide](#troubleshooting-guide)
-
-## System Architecture
-
-The SAP audit system consists of seven Python scripts that work together in a modular pipeline:
+The SAP Audit Tool consists of several interconnected components designed to process and analyze SAP security logs and change documents. The system follows a modular architecture with clear separation of concerns:
 
 ```
-Raw SAP Export Files 
-       ↓
-[sap_audit_data_prep.py]
-       ↓
-Standardized CSV Files (SM20.csv, CDHDR.csv, CDPOS.csv)
-       ↓
-[SAP Log Session Merger.py]
-       ↓
-Session Timeline (SAP_Session_Timeline.xlsx)
-       ↓
-[sap_audit_tool.py] → Imports modules for specialized functions
-       ↓                ↙                       ↘
-[sap_audit_tool_risk_assessment.py]  [sap_audit_tool_output.py]
-       ↓
-Final Audit Report (SAP_Audit_Report.xlsx)
-
-Maintenance Tools:
-[find_missing_descriptions.py] [update_sap_descriptions.py]
+┌──────────────────┐     ┌───────────────────┐     ┌──────────────────┐
+│                  │     │                   │     │                  │
+│  Raw SAP Exports ├────►│  Data Preparation ├────►│  Session Merger  │
+│                  │     │                   │     │                  │
+└──────────────────┘     └───────────────────┘     └─────────┬────────┘
+                                                             │
+┌──────────────────┐     ┌───────────────────┐     ┌─────────▼────────┐
+│                  │     │                   │     │                  │
+│  Excel Reports   │◄────┤  Report Generator │◄────┤  Risk Assessment │
+│                  │     │                   │     │                  │
+└──────────────────┘     └───────────────────┘     └──────────────────┘
 ```
 
-Each component has a specific role in transforming raw SAP log data into actionable audit insights.
-
-## Data Flow & Processing Pipeline
-
-### 1. Data Preparation Phase
-- **Input**: Raw SAP export files (*_sm20_*.xlsx, *_cdhdr_*.xlsx, *_cdpos_*.xlsx)
-- **Process**: Standardizes data by converting column headers to uppercase, creating datetime fields, and sorting by user and time
-- **Output**: Three standardized CSV files (SM20.csv, CDHDR.csv, CDPOS.csv)
-
-### 2. Session Merging Phase
-- **Input**: Standardized CSV files from the preparation phase
-- **Process**: Correlates events across different log types, assigns session IDs based on user activity with a 60-minute timeout
-- **Output**: SAP_Session_Timeline.xlsx with unified, chronological view of activities
-
-### 3. Risk Assessment Phase
-- **Input**: Session timeline from the merging phase
-- **Process**: Applies risk evaluation logic based on sensitive tables, critical fields, transaction codes, and change types
-- **Output**: Session data with risk levels (High, Medium, Low) and documented risk factors
-
-### 4. Output Generation Phase
-- **Input**: Risk-assessed session data
-- **Process**: Creates formatted Excel file with conditionally formatted risk levels and summary statistics
-- **Output**: SAP_Audit_Report.xlsx with multiple sheets for different analysis views
-
-## Script Detailed Analysis
-
-### 1. sap_audit_data_prep.py
-
-**Purpose**: Prepares and standardizes raw SAP log files for analysis.
-
-**Key Functions**:
-- `find_latest_file(pattern)`: Locates the most recent matching export file
-- `process_sm20(input_file, output_file)`: Processes Security Audit Log data
-- `process_cdhdr(input_file, output_file)`: Processes Change Document Header data
-- `process_cdpos(input_file, output_file)`: Processes Change Document Item data
-
-**Critical Processing Steps**:
-- Converts column headers to UPPERCASE for consistent referencing
-- Creates datetime columns by combining separate date and time fields
-- Sorts data chronologically by user and datetime
-- Validates presence of required fields and warns if missing
-- Drops rows with invalid datetime values
-
-**Error Handling**:
-- Logs warnings for missing important fields
-- Handles missing files gracefully with appropriate warnings
-- Provides detailed error logs with timestamps
-
-**Configuration Constants**:
-- File patterns used to locate input files (SM20_PATTERN, CDHDR_PATTERN, CDPOS_PATTERN)
-- Column name mappings for each file type
-- Fields to exclude from processing (EXCLUDE_FIELDS)
-
-### 2. SAP Log Session Merger.py
-
-**Purpose**: Creates a unified timeline of user sessions by merging all log sources.
-
-**Key Functions**:
-- `assign_session_ids(df, user_col, time_col, session_timeout_minutes=60)`: Groups activities into sessions
-- `prepare_sm20(sm20)` & `prepare_cdhdr(cdhdr)`: Formats source-specific data
-- `merge_cdhdr_cdpos(cdhdr, cdpos)`: Joins change document headers with details
-- `create_unified_timeline(sm20, cdhdr_cdpos)`: Combines all sources into a single timeline
-
-**Session ID Logic**:
-- A new session starts when:
-  1. User changes, OR
-  2. Time gap between activities exceeds 60 minutes
-- Sessions are numbered chronologically (S0001, S0002, etc.)
-- Each session ID includes the date for easier reference
-
-**Data Correlation Strategy**:
-- CDHDR and CDPOS are merged using:
-  - Object class (OBJECTCLAS)
-  - Object ID (OBJECTID)
-  - Change document number (CHANGENR)
-- SM20 records are correlated to change documents mainly by user and timestamp
-
-**Output Formatting**:
-- Color-coding by source (SM20, CDHDR, CDPOS)
-- Column width optimized for content type
-- Filter and frozen headers for usability
-
-### 3. sap_audit_tool.py
-
-**Purpose**: Main orchestration script that ties together all components.
-
-**Workflow Logic**:
-1. Checks if session timeline exists
-2. If not, calls the SAP Log Session Merger functionality
-3. Prepares session data for analysis
-4. Imports and applies risk assessment module
-5. Sorts results by risk level (High first)
-6. Calls output generation module
-
-**Analysis Preparation**:
-- Adds flags for display-only activities
-- Identifies actual changes (insertion, update, deletion)
-- Flags special cases (e.g., display operations that included changes)
-
-**Dependencies**:
-- `sap_audit_tool_risk_assessment_updated.py`
-- `sap_audit_tool_output.py`
-
-### 4. sap_audit_tool_risk_assessment.py
-
-**Purpose**: Evaluates the risk level of SAP activities with enhanced descriptive information.
-
-**Key Functions**:
-- `get_sensitive_tables()`: Defines tables that contain security-critical data
-- `get_sensitive_table_descriptions()`: Provides detailed descriptions for sensitive tables
-- `get_common_table_descriptions()`: Provides descriptions for common SAP tables
-- `get_sensitive_tcodes()`: Defines transaction codes that involve high-risk operations 
-- `get_sensitive_tcode_descriptions()`: Provides detailed descriptions for sensitive transaction codes
-- `get_common_tcode_descriptions()`: Provides descriptions for common transaction codes
-- `get_critical_field_patterns()`: Defines regex patterns for sensitive fields
-- `get_critical_field_pattern_descriptions()`: Provides detailed descriptions for field patterns
-- `get_common_field_descriptions()`: Provides descriptions for common SAP fields
-- `get_table_info()`, `get_tcode_info()`, `get_field_info()`: Helper functions that format descriptive information
-- `assess_risk_session(session_data)`: Main risk evaluation function for session-based analysis
-
-**Risk Categories**:
-- **High Risk**: Activities involving sensitive tables, fields, or transaction codes
-- **Medium Risk**: Update operations not otherwise categorized as high risk
-- **Low Risk**: Display-only operations with no changes
-
-**Enhanced Risk Factors**:
-- Risk factors now include detailed descriptions of SAP elements
-- Example: "Update operation - Existing record modified in LIPS (Delivery Item) table"
-- Provides reviewers with immediate context about what each SAP element represents
-
-**Field Description System**:
-- Complete coverage of field descriptions through comprehensive dictionaries
-- Format: "FIELD_NAME": "Field Name - Description of its purpose"
-- Organized by functional categories (authorization, financial, vendor, etc.)
-- Ensures all fields in reports have meaningful descriptions for reviewers
-
-**Detailed Risk Evaluation Logic**:
-See detailed breakdown in the [Risk Assessment Logic](#risk-assessment-logic) section.
-
-### 5. sap_audit_tool_output.py
-
-**Purpose**: Generates the final audit report Excel file.
-
-**Key Functions**:
-- `apply_custom_headers(worksheet, df, wb)`: Formats headers based on data source
-- `generate_excel_output(...)`: Creates multi-sheet Excel report with formatting
-
-**Output Structure**:
-- **Session Timeline**: Unified view of all activity
-- **Correlated Events**: Activities matched across log types (legacy mode)
-- **Unmatched CD Changes**: Change documents without corresponding audit logs
-- **Unmatched SM20 Logs**: Audit logs without change documents
-- **Summary**: Risk distribution charts and statistics
-- **Legend**: Explanation of color-coding scheme
-
-**Formatting Features**:
-- Conditional color-coding by risk level
-- Header coloring by data source
-- Auto-filters and frozen panes for usability
-- Pie chart visualization of risk distribution
-
-## Risk Assessment Logic
-
-The heart of the audit tool is the risk assessment logic in `sap_audit_tool_risk_assessment_updated.py`. This section details the exact evaluation criteria.
-
-### Risk Level Assignment Criteria
-
-#### High Risk Indicators
-An activity is assigned **HIGH RISK** if ANY of these conditions are met:
-
-1. **Sensitive Table Access**:
-   - The table being accessed/modified is in the sensitive tables list
-   - Examples: USR01, AGR_USERS, BSEG, T012K, REGUH (see full list in code)
-
-2. **Sensitive Transaction Code**:
-   - The transaction code is in the sensitive tcodes list
-   - Examples: 
-     - Debugging: RSDEBUG, /H, ST22
-     - User Management: SU01, SU10, PFCG
-     - Table Maintenance: SE11, SE16N, SM30
-     - Code Changes: SE38, SE80, SE24
-     - Payment/Banking: F110, FBPM, FB70
-
-3. **Critical Field Changes**:
-   - The field name matches patterns for sensitive data
-   - Patterns include:
-     - Authentication: PASSWORD, AUTH, ROLE, PERMISSION
-     - Financial: AMOUNT, CURRENCY, BANK, PAYMENT
-     - Master Data: VENDOR, CUSTOMER, EMPLOYEE
-     - System: CONFIG, SETTING, PARAMETER
-
-4. **Display with Changes**:
-   - Activity logged as display-only but change records exist
-   - This catches potential security bypass attempts
-
-5. **Insert or Delete Operations**:
-   - Change indicator is 'I' (Insert) or 'D' (Delete)
-   - These operations have higher impact than updates
-
-#### Medium Risk Indicators
-An activity is assigned **MEDIUM RISK** if:
-
-1. **Update Operations**:
-   - Change indicator is 'U' (Update)
-   - Not already flagged as High Risk by other criteria
-
-#### Low Risk Default
-An activity is assigned **LOW RISK** if:
-- None of the above conditions are met
-- Typically these are display-only operations on non-sensitive data
-
-### Risk Factor Documentation
-For each identified risk, the specific factor is documented in the 'risk_factors' column with enhanced descriptive information:
-
-- Sensitive table access: "Vendor master - Contains vendor master data (Table: LFA1)"
-- Sensitive transaction code: "Data browser - Direct table data access (TCode: SE16)"
-- Critical field changes: "Password/credential modification (Field: PASSWORD)"
-- Display with changes: "Display transaction with changes (TCode: VA03 (Display Sales Order))"
-- Insert operations: "Insert operation - New record created in ADRU (Address Data Universe) table"
-- Delete operations: "Delete operation - Record removed from LIKP (Delivery Header) table"
-- Update operations: "Update operation - Existing record modified in LIPS (Delivery Item) table"
-
-The enhanced descriptions provide immediate context about what each SAP element represents, making the audit report more useful for reviewers without deep SAP expertise.
-
-### Configuration Lists
-
-The risk assessment relies on three key configuration lists that define what is considered sensitive:
-
-1. **Sensitive Tables** (from `get_sensitive_tables()`)
-   - Security tables (USR01, AGR_USERS, etc.)
-   - Payment and banking tables (REGUH, PAYR, etc.)
-   - Financial tables (BKPF, BSEG, etc.)
-   - Master data tables (KNA1, LFA1, etc.)
-
-2. **Critical Field Patterns** (from `get_critical_field_patterns()`)
-   - Regex patterns that match field names
-   - Example: `r"(?i)PASS(WORD)?"` matches any field containing "pass" or "password"
-
-3. **Sensitive Transaction Codes** (from `get_sensitive_tcodes()`)
-   - Organized by category (debugging, user management, etc.)
-
-## Maintenance Tools
-
-### 1. find_missing_descriptions.py
-
-**Purpose**: Identifies SAP elements (tables, fields, transaction codes) that don't have descriptions in the dictionaries.
-
-**Key Functions**:
-- Imports the dictionaries from the risk assessment module
-- Analyzes the session timeline file to extract unique SAP elements
-- Compares elements against the existing dictionaries of descriptions
-- Reports elements without descriptions and their frequency of occurrence
-
-**Technical Implementation**:
-- Uses dictionary comprehension to extract and analyze unique field values
-- Case-insensitive comparison with dictionary keys ensures consistent matching
-- Skips null values and non-string fields for robustness
-- Optimized to handle large datasets efficiently
-
-**Features**:
-- Lists all SAP elements without descriptions
-- Shows the most frequent undescribed elements to prioritize additions
-- Generates code snippets ready to copy into the risk assessment module
-- Helps maintain complete coverage of SAP element descriptions
-- Enhanced version provides comprehensive field statistics
-
-**Output**:
-- Lists of tables, transaction codes, and fields without descriptions
-- Top 10 most frequent elements without descriptions
-- Dictionary code snippets formatted for easy addition to the risk assessment module
-- Comprehensive field analysis with frequency statistics
-
-### 1.5 monitor_new_fields.py
-
-**Purpose**: Lightweight, focused tool for monitoring the field description coverage.
-
-**Key Functions**:
-- `log_message(message, level)`: Formats log messages with timestamps and severity
-- `monitor_fields(file_path)`: Core function that analyzes field description coverage
-
-**Technical Implementation**:
-- Directly imports field descriptions from risk assessment module
-- Uses set operations to efficiently detect missing descriptions
-- Provides statistics on coverage percentage
-- Returns structured data for automated integration
-
-**Features**:
-- Simplified interface focused specifically on field descriptions
-- Low-overhead execution for quick verification
-- Clear template generation for missing fields
-- Exit code indicates status (0 = success, all fields covered; 1 = missing descriptions)
-
-**Integration Points**:
-- Can be integrated into CI/CD pipelines to verify description coverage
-- Can be scheduled to run automatically after data processing
-- Can be extended to send notifications when coverage drops below threshold
-
-### 2. update_sap_descriptions.py
-
-**Purpose**: Provides a streamlined workflow for maintaining SAP element descriptions.
-
-**Key Functions**:
-- `analyze_session_timeline()`: Examines session data for elements without descriptions
-- `update_descriptions()`: Provides guidance on how to update the dictionaries
-
-**Command-Line Interface**:
-- `--analyze`: Default mode that analyzes the session timeline
-- `--update`: Shows instructions for updating the descriptions
-
-**Workflow Support**:
-1. Discovers elements without descriptions
-2. Provides templates for adding descriptions
-3. Makes the maintenance process simpler when new SAP elements appear
-
-**Integration**:
-- Uses the same dictionary structures as the risk assessment module
-- Reads from the same session timeline file used by the main tool
-- Designed to be run whenever new SAP export data is processed
-
-The maintenance tools make it easy to keep the risk assessment module's descriptive capabilities up to date. As new SAP logs are processed, any new tables, fields, or transaction codes can be quickly identified and descriptions added to enhance the audit report's usefulness.
-
-## Configuration Parameters
-
-These key configuration parameters affect the system behavior:
-
-### sap_audit_data_prep.py
-- `INPUT_DIR`: Directory for input files (default: "input" subfolder)
-- `SM20_PATTERN`, `CDHDR_PATTERN`, `CDPOS_PATTERN`: File naming patterns
-- Column name constants (e.g., `SM20_USER_COL`, `CDHDR_CHANGENR_COL`)
-- `EXCLUDE_FIELDS`: Fields to skip in processing
-
-### SAP Log Session Merger.py
-- `SESSION_TIMEOUT_MINUTES`: Minutes of inactivity before starting a new session (default: 60)
-- Column mapping for data sources
-
-### sap_audit_tool.py
-- `VERSION`: Tool version number
-- `INPUT_DIR`: Directory for input files
-- `OUTPUT_FILE`: Path for final report
-
-## Troubleshooting Guide
-
-### Common Issues and Solutions
-
-#### 1. Missing Input Files
-- **Symptom**: Data preparation script warns about missing files
-- **Possible Causes**:
-  - Files not placed in the expected "input" directory
-  - Files don't match naming patterns (*_sm20_*.xlsx, etc.)
-- **Solution**:
-  - Check file naming conventions
-  - Verify correct input directory path
-
-#### 2. Risk Assessment Not Working
-- **Symptom**: All activities show "Low" risk or "Risk assessment failed"
-- **Possible Causes**:
-  - Column name mismatches between data prep and risk assessment
-  - Missing required columns in session timeline
-- **Troubleshooting Steps**:
-  1. Check column names in SAP_Session_Timeline.xlsx
-  2. Verify column mappings in risk assessment module
-  3. Look for errors in tool logs
-
-#### 3. Sessions Not Properly Separated
-- **Symptom**: Activities that should be separate appear in same session
-- **Possible Cause**: SESSION_TIMEOUT_MINUTES too long
-- **Solution**: Modify timeout value in SAP Log Session Merger.py
-
-#### 4. Missing Critical Activities in Risk Assessment
-- **Symptom**: Known risky operations not flagged appropriately
-- **Possible Causes**:
-  - Sensitive resource not included in configuration lists
-  - Risk criteria not matching expected patterns
-- **Solution**:
-  - Update `get_sensitive_tables()`, `get_critical_field_patterns()`, or `get_sensitive_tcodes()`
-  - Add additional risk assessment logic to `assess_risk_session()`
-
-#### 5. Risk Evaluation Edge Cases
-When troubleshooting risk assessment, pay attention to these special scenarios:
-
-- **Mixed Source Analysis**: How records from different sources (SM20 vs CDPOS) are evaluated
-- **Discrepancies Between Logs**: When SM20 shows one action but CDPOS indicates different action
-- **Time Correlation Issues**: Events that appear related but have time stamp differences
-- **Incomplete Data Records**: How the system handles records with missing fields
-
-### Key Debugging Points
-
-To deeply troubleshoot the evaluation logic:
-
-1. **Risk Assessment Function**:
-   - The `assess_risk_session()` function in sap_audit_tool_risk_assessment_updated.py is the central point for evaluation
-   - Look for issues in how risk factors are applied and documented
-
-2. **Session Timeline Creation**:
-   - Check `create_unified_timeline()` in SAP Log Session Merger.py
-   - This is where data from different sources gets combined and aligned
-
-3. **Risk Configuration Lists**:
-   - Verify sensitive tables, fields, and transaction codes match expectations
-   - These lists determine what activities get flagged
-
-4. **Column Mapping**:
-   - Ensure column references match between modules
-   - Check constants like `SESSION_TABLE_COL`, `SESSION_TCODE_COL` against actual data
-
-5. **Risk Level Assignment Logic**:
-   - Check conditional statements in risk assessment
-   - Verify proper order of risk evaluation (higher risks should override lower)
-
-## Extending the Risk Assessment
-
-To enhance or modify the risk evaluation logic:
-
-1. **Add New Sensitive Resources**:
-   - Update `get_sensitive_tables()`, `get_critical_field_patterns()`, or `get_sensitive_tcodes()`
-   - Follow existing patterns for consistency
-
-2. **Add New Risk Criteria**:
-   - Modify `assess_risk_session()` function
-   - Add new conditions and document them in 'risk_factors'
-
-3. **Change Risk Thresholds**:
-   - Modify when activities are classified as High/Medium/Low
-   - Example: Change update operations from Medium to High risk
-
-4. **Custom Risk Combinations**:
-   - Create compound conditions that look for specific patterns of behavior
-   - Example: Flag when sensitive tables are accessed outside business hours
+### Data Flow
+
+1. **Input**: Raw SAP exports (SM20 audit logs, CDHDR change document headers, CDPOS change document items)
+2. **Processing**: 
+   - Data standardization (column headers, datetime formatting)
+   - Session correlation and timeline creation
+   - Risk assessment based on predefined rules
+3. **Output**: Excel report with color-coded risk assessments and filtering capabilities
+
+## System Components
+
+### 1. Data Preparation (sap_audit_data_prep.py)
+
+This module handles the initial processing of raw SAP export files:
+
+- **Functions**:
+  - `process_sm20()`: Processes SM20 security audit log exports
+  - `process_cdhdr()`: Processes CDHDR change document header exports
+  - `process_cdpos()`: Processes CDPOS change document item exports
+  - `clean_whitespace()`: Utility function to clean string columns
+
+- **Input Format**: Excel files with specific naming patterns:
+  - `*_sm20_*.xlsx` - Security audit log exports
+  - `*_cdhdr_*.xlsx` - Change document header exports 
+  - `*_cdpos_*.xlsx` - Change document item exports
+
+- **Output Format**: CSV files with standardized column names and data formats:
+  - `SM20.csv` - Processed security audit logs
+  - `CDHDR.csv` - Processed change document headers
+  - `CDPOS.csv` - Processed change document items
+
+### 2. Session Merger (SAP Log Session Merger.py)
+
+This component correlates events across different log types into a unified session timeline:
+
+- **Correlation Logic**:
+  - Events are grouped by user
+  - Temporal proximity is used to identify session boundaries
+  - Activities within a threshold time window are considered part of the same session
+  - TCode is used to associate change documents with SM20 logs
+
+- **Session ID Generation**:
+  - Sequential session IDs are assigned to each group of related activities
+  - Format: `S0001 (YYYY-MM-DD)` where the date is the session start date
+
+- **Output**: Excel file `SAP_Session_Timeline.xlsx` containing the unified session timeline
+
+### 3. Risk Assessment (sap_audit_tool_risk_assessment.py)
+
+This module analyzes the session timeline to identify security risks:
+
+- **Risk Categories**:
+  - Low: Normal operational activities
+  - Medium: Activities with elevated privileges or sensitive data
+  - High: Activities with significant security impact
+  - Critical: Activities that indicate potential security violations
+
+- **Risk Factors**:
+  - Sensitive table access
+  - Critical field modifications
+  - Privileged transactions
+  - Debugging activities
+  - FireFighter account usage
+  - Mass-change operations
+  - Configuration alterations
+
+- **Functions**:
+  - `get_sensitive_tables()`: Returns list of security-sensitive tables
+  - `get_critical_field_patterns()`: Returns patterns for critical fields
+  - `get_sensitive_tcodes()`: Returns list of high-risk transaction codes
+  - `assess_risk_session()`: Main function for risk assessment
+  - `custom_field_risk_assessment()`: Assesses risk based on specific field changes
+
+### 4. Main Orchestration (sap_audit_tool.py)
+
+This is the main entry point that coordinates the entire process:
+
+- **Functions**:
+  - `load_session_timeline()`: Loads existing session timeline or returns None
+  - `prepare_session_data()`: Prepares session data for risk assessment
+  - `run_session_merger()`: Executes the session merger if needed
+  - `main()`: Main execution function
+
+- **Process Flow**:
+  1. Check if session timeline exists
+  2. If not, run the session merger
+  3. Prepare session data for analysis
+  4. Apply risk assessment to session data
+  5. Generate Excel output
+
+### 5. Report Generation (sap_audit_tool_output.py)
+
+This component creates formatted Excel reports:
+
+- **Sheets Generated**:
+  - **Session_Timeline**: Chronological view of all user activities
+  - **Correlated_Events**: (Legacy mode) Activities where audit log entries match change documents
+  - **Unmatched_CD_Changes**: Change documents without corresponding audit log entries
+  - **Unmatched_SM20_Logs**: Audit log entries without corresponding change documents
+  - **Debug_Activities**: Special sheet for debugging and developer activities
+  - **Summary**: Risk distribution statistics and charts
+  - **Legend_Header_Colors**: Guide to the color-coding system
+
+- **Functions**:
+  - `apply_custom_headers()`: Formats worksheet headers based on data source
+  - `generate_excel_output()`: Main function for Excel report generation
+
+### 6. Field Description System
+
+This subsystem maintains and applies business-friendly descriptions to technical SAP field names:
+
+- **Components**:
+  - `find_missing_descriptions.py`: Identifies fields without descriptions
+  - `monitor_new_fields.py`: Continuously monitors for new fields
+  - `update_sap_descriptions.py`: Updates the field description database
+
+- **Database Structure**:
+  - The field descriptions are stored in a SQLite database with the following schema:
+    ```
+    CREATE TABLE field_descriptions (
+      field_name TEXT PRIMARY KEY,
+      description TEXT NOT NULL,
+      last_updated DATETIME,
+      source TEXT
+    )
+    ```
+
+- **Integration**: Field descriptions are integrated into risk assessment and reporting to provide clear context for technical changes
+
+## Risk Assessment Methodology
+
+The risk assessment system uses a rule-based approach with the following factors:
+
+### 1. Table Sensitivity
+
+Tables are categorized by sensitivity level:
+
+- **Critical**: Tables containing authorization data, security configurations
+  - Examples: USR*, AGR*, USRAC, AUTH*
+
+- **High Risk**: Tables containing sensitive master data or financial configurations
+  - Examples: BKPF, BSEG, KNA1, LFA1, VBAK
+
+- **Medium Risk**: Tables containing operational data with compliance implications
+  - Examples: EKKO, EKPO, MKPF, MSEG
+
+- **Low Risk**: Tables containing non-sensitive operational data
+  - Examples: MAKT, MARA (depending on industry context)
+
+### 2. Transaction Code Risk
+
+Transaction codes are categorized by privilege level:
+
+- **Critical**: Direct database modification, developer tools, authorization management
+  - Examples: SE16, SA38, SU01, SE37, SE11, SE16N
+
+- **High Risk**: System configuration, master data management
+  - Examples: SPRO, MM01, XK01, FK01
+
+- **Medium Risk**: Operational processes with compliance implications
+  - Examples: ME21N, VA01, FB01
+
+- **Low Risk**: Inquiry transactions, display-only access
+  - Examples: MM03, VA03, FK03
+
+### 3. Field Criticality
+
+Fields are categorized by sensitivity:
+
+- **Critical**: Fields affecting security, authorizations, or payment data
+  - Examples: PASSWORD, BANKN, ACCNT, AUTH*
+
+- **High Risk**: Fields affecting financial calculations or core business rules
+  - Examples: BETRG (Amount), KBETR (Rate), ZTERM (Payment terms)
+
+- **Medium Risk**: Fields affecting operational processes
+  - Examples: MENGE (Quantity), DATUM (Date), UZEIT (Time)
+
+- **Low Risk**: Descriptive fields
+  - Examples: TEXT, DESCR, NAME*
+
+### 4. Activity Type Analysis
+
+Activities are analyzed based on type:
+
+- **Create (I)**: New record creation is assessed based on table sensitivity
+- **Update (U)**: Field modifications are assessed based on field criticality
+- **Delete (D)**: Deletion is typically considered high risk for sensitive tables
+
+### 5. Pattern Detection
+
+The system detects special patterns indicating elevated risk:
+
+- **Debugging**: Detection of debug sessions via specific variable markers
+- **FireFighter**: Special monitoring for emergency access accounts
+- **Mass Changes**: Detection of batch or mass update patterns
+- **After-Hours Activity**: Activities outside normal business hours receive additional scrutiny
+
+### 6. Scoring Algorithm
+
+The final risk score is calculated using a weighted combination of the above factors:
+
+```
+Risk Score = (Table Sensitivity * 0.3) + 
+             (TCode Risk * 0.3) + 
+             (Field Criticality * 0.3) + 
+             (Pattern Multiplier * 0.1)
+```
+
+The resulting score is mapped to risk levels:
+- 0.0-0.3: Low Risk
+- 0.3-0.6: Medium Risk
+- 0.6-0.8: High Risk
+- 0.8-1.0: Critical Risk
+
+## Field Description System
+
+The Field Description System translates technical SAP field names into business-friendly descriptions:
+
+### 1. Detection Process
+
+- **Automated Scanning**: The system automatically scans log files for field names
+- **Comparison**: Field names are checked against the existing description database
+- **Identification**: Fields without descriptions are flagged for review
+
+### 2. Update Process
+
+- **Manual Updates**: Administrators can add descriptions via the update tool
+- **Batch Import**: Descriptions can be imported from CSV files
+- **API Integration**: For advanced setups, descriptions can be retrieved from SAP via RFC
+
+### 3. Implementation Details
+
+- **Storage**: Descriptions are stored in a SQLite database for portability
+- **Caching**: Frequently used descriptions are cached for performance
+- **Versioning**: Description changes are tracked with timestamps
+
+### 4. Field Description Format
+
+Descriptions follow a standardized format:
+- Clear, concise business terminology
+- Context notes where appropriate
+- Technical details for complex fields
+
+Example:
+```
+KRED: "Vendor Account Number"
+BUKRS: "Company Code"
+BLDAT: "Document Date"
+```
+
+## Customization
+
+### 1. Configuration Options
+
+The tool can be customized through several mechanisms:
+
+- **Risk Assessment Rules**:
+  - Edit the risk assessment module to modify table and transaction risk levels
+  - Add or modify field criticality patterns
+
+- **Field Descriptions**:
+  - Use the update tool to add or modify field descriptions
+  - Import custom description sets for specialized business areas
+
+- **Report Formatting**:
+  - Modify the Excel formatting in the output module
+  - Customize color schemes or add additional conditional formatting
+
+### 2. Adding Custom Components
+
+Developers can extend the system by:
+
+- **Creating New Analyzers**: Add specialized analysis modules for specific business processes
+- **Adding Data Sources**: Incorporate additional SAP log types
+- **Creating Custom Reports**: Develop specialized reports for specific compliance needs
+
+### 3. Integration Options
+
+The tool can be integrated with:
+
+- **Scheduling Systems**: Set up automated execution via Windows Task Scheduler or cron
+- **Notification Systems**: Add email or messaging alerts for high-risk activities
+- **Dashboarding Tools**: Export data for visualization in BI platforms
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Input File Format Issues**:
+   - Ensure SAP exports follow the expected format
+   - Check column headers in raw exports
+   - Verify date/time formats in SAP extracts
+
+2. **Session Correlation Problems**:
+   - Adjust time window parameters if sessions aren't properly grouped
+   - Check for clock synchronization issues between systems
+
+3. **Risk Assessment Tuning**:
+   - Review and adjust table sensitivity levels
+   - Modify transaction code risk classifications
+   - Update field criticality patterns
+
+4. **Resource Limitations**:
+   - For large datasets, increase memory allocation to Python
+   - Consider processing logs in smaller time segments
+
+### Logging
+
+The system provides detailed logging:
+
+- Console output shows processing status
+- Log messages use timestamps and severity levels (INFO, WARNING, ERROR)
+- Error messages include stack traces for debugging
+
+### Version Compatibility
+
+- The tool is designed for SAP ECC and S/4HANA logs
+- The tool is compatible with Python 3.6 or higher
+- Pandas 1.0.0 or higher is required for optimal performance
+
+## Performance Considerations
+
+- **File Size Impact**: Processing time scales linearly with input file size
+- **Memory Usage**: Large datasets (>100,000 records) may require increased memory allocation
+- **Optimization**: For very large datasets, consider:
+  - Processing in batches by date range
+  - Reducing the scope of sensitive table/field checks
+  - Using SSD storage for temporary files
+
+## Security Notes
+
+ **Interpretation**: Risk assessments should be reviewed by qualified personnel

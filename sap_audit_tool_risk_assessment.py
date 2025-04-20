@@ -398,67 +398,71 @@ def get_common_field_descriptions():
 
 def get_critical_field_patterns():
     """Return patterns for critical fields that should be monitored closely."""
-    return {
-        # Authentication and authorization fields
-        r"(?i)\bPASS(WORD)?\b": "Password field",
-        r"(?i)\bAUTH(ORIZATION)?\b": "Authorization field",
-        r"(?i)\bROLE\b": "Role assignment field",
-        # Exclude SPERM which contains PERM but shouldn't trigger this pattern
-        r"(?i)\bPERM(ISSION)?\b(?<!SPERM)": "Permission field", 
-        r"(?i)\bACCESS\b": "Access control field",
-        # Exclude exact matches for "KEY" as a field name, but catch all other key-related fields
-        r"(?i)\b(?!KEY$).*KEY(TOKEN|CODE|AUTH|PASS|CRYPT|SEC).*\b": "Security key field",
-        r"(?i)\bCRED(ENTIAL)?\b": "Credential field",
-        
-        # Financial fields
-        r"(?i)\bAMOUNT\b": "Financial amount field",
-        r"(?i)\bCURR(ENCY)?\b": "Currency field",
-        r"(?i)\bBANK\b": "Banking information field",
-        r"(?i)\bACCOUNT\b": "Account field",
-        r"(?i)\bPAYMENT\b": "Payment field",
-        
-        # Master data fields
-        r"(?i)\bVENDOR\b": "Vendor master data field",
-        r"(?i)\bCUSTOMER\b": "Customer master data field",
-        r"(?i)\bEMPLOYEE\b": "Employee data field",
-        
-        # System configuration
-        r"(?i)\bCONFIG\b": "Configuration field",
-        r"(?i)\bSETTING\b": "System setting field",
-        r"(?i)\bPARAM(ETER)?\b": "Parameter field"
-    }
+    patterns = {}
+    
+    # Authentication and authorization fields
+    patterns[r"(?i)PASS(WORD)?"] = "Password field"
+    patterns[r"(?i)AUTH(ORIZATION)?"] = "Authorization field"
+    patterns[r"(?i)ROLE"] = "Role assignment field"
+    # Exclude SPERM which contains PERM but shouldn't trigger this pattern
+    patterns[r"(?i)PERM(ISSION)?(?<!SPERM)"] = "Permission field"
+    patterns[r"(?i)ACCESS"] = "Access control field"
+    # Exclude exact matches for "KEY" as a field name, but catch all other key-related fields
+    patterns[r"(?i)(KEY(TOKEN|CODE|AUTH|PASS|CRYPT|SEC)|PASSWORD)"] = "Security key field"
+    patterns[r"(?i)CRED(ENTIAL)?"] = "Credential field"
+    
+    # Financial fields
+    patterns[r"(?i)AMOUNT"] = "Financial amount field"
+    patterns[r"(?i)CURR(ENCY)?"] = "Currency field" 
+    patterns[r"(?i)BANK"] = "Banking information field"
+    patterns[r"(?i)ACCOUNT"] = "Account field"
+    patterns[r"(?i)PAYMENT"] = "Payment field"
+    
+    # Master data fields
+    patterns[r"(?i)VENDOR"] = "Vendor master data field"
+    patterns[r"(?i)CUSTOMER"] = "Customer master data field"
+    patterns[r"(?i)EMPLOYEE"] = "Employee data field"
+    
+    # System configuration
+    patterns[r"(?i)CONFIG"] = "Configuration field"
+    patterns[r"(?i)SETTING"] = "System setting field"
+    patterns[r"(?i)PARAM(ETER)?"] = "Parameter field"
+    
+    return patterns
 
 def get_critical_field_pattern_descriptions():
     """Return detailed descriptions for critical field patterns."""
-    return {
-        # Authentication and authorization fields
-        r"(?i)\bPASS(WORD)?\b": "Password/credential modification - Security sensitive change affecting user authentication",
-        r"(?i)\bAUTH(ORIZATION)?\b": "Authorization configuration - Security permission change affecting system access control",
-        r"(?i)\bROLE\b": "Role configuration - Security access control change affecting user permissions scope",
-        # Exclude SPERM which contains PERM but shouldn't trigger this pattern
-        r"(?i)\bPERM(ISSION)?\b(?<!SPERM)": "Permission settings - Access control modification affecting security boundaries",
-        r"(?i)\bACCESS\b": "Access control field - Field controlling system or resource availability",
-        # Exclude exact matches for "KEY" as a field name, but catch all other key-related fields
-        r"(?i)\b(?!KEY$).*KEY(TOKEN|CODE|AUTH|PASS|CRYPT|SEC).*\b": "Security key/token - Infrastructure change affecting encryption or authentication",
-        r"(?i)\bCRED(ENTIAL)?\b": "Credential field - Authentication data that may grant system access",
-        
-        # Financial fields
-        r"(?i)\bAMOUNT\b": "Financial amount field - Monetary value change affecting financial transactions",
-        r"(?i)\bCURR(ENCY)?\b": "Currency field - Financial data type affecting monetary calculations",
-        r"(?i)\bBANK\b": "Banking details - Payment routing information change affecting transactions",
-        r"(?i)\bACCOUNT\b": "Account field - Financial or user account record modification",
-        r"(?i)\bPAYMENT\b": "Payment field - Financial transaction data affecting money movement",
-        
-        # Master data fields
-        r"(?i)\bVENDOR\b": "Vendor master data field - Supplier information affecting procurement processes",
-        r"(?i)\bCUSTOMER\b": "Customer master data field - Client information affecting sales processes",
-        r"(?i)\bEMPLOYEE\b": "Employee data field - Personnel information affecting HR processes",
-        
-        # System configuration
-        r"(?i)\bCONFIG\b": "Configuration field - System setting affecting overall system behavior",
-        r"(?i)\bSETTING\b": "System setting field - Parameter controlling system functionality",
-        r"(?i)\bPARAM(ETER)?\b": "Parameter field - System configuration option affecting behavior"
-    }
+    descriptions = {}
+    
+    # Authentication and authorization fields
+    descriptions[r"(?i)PASS(WORD)?"] = "Password/credential modification - Security sensitive change affecting user authentication"
+    descriptions[r"(?i)AUTH(ORIZATION)?"] = "Authorization configuration - Security permission change affecting system access control"
+    descriptions[r"(?i)ROLE"] = "Role configuration - Security access control change affecting user permissions scope"
+    # Exclude SPERM which contains PERM but shouldn't trigger this pattern
+    descriptions[r"(?i)PERM(ISSION)?(?<!SPERM)"] = "Permission settings - Access control modification affecting security boundaries"
+    descriptions[r"(?i)ACCESS"] = "Access control field - Field controlling system or resource availability"
+    # Exclude exact matches for "KEY" as a field name, but catch all other key-related fields
+    descriptions[r"(?i)(KEY(TOKEN|CODE|AUTH|PASS|CRYPT|SEC)|PASSWORD)"] = "Security key/token - Infrastructure change affecting encryption or authentication"
+    descriptions[r"(?i)CRED(ENTIAL)?"] = "Credential field - Authentication data that may grant system access"
+    
+    # Financial fields
+    descriptions[r"(?i)AMOUNT"] = "Financial amount field - Monetary value change affecting financial transactions"
+    descriptions[r"(?i)CURR(ENCY)?"] = "Currency field - Financial data type affecting monetary calculations"
+    descriptions[r"(?i)BANK"] = "Banking details - Payment routing information change affecting transactions"
+    descriptions[r"(?i)ACCOUNT"] = "Account field - Financial or user account record modification"
+    descriptions[r"(?i)PAYMENT"] = "Payment field - Financial transaction data affecting money movement"
+    
+    # Master data fields
+    descriptions[r"(?i)VENDOR"] = "Vendor master data field - Supplier information affecting procurement processes"
+    descriptions[r"(?i)CUSTOMER"] = "Customer master data field - Client information affecting sales processes"
+    descriptions[r"(?i)EMPLOYEE"] = "Employee data field - Personnel information affecting HR processes"
+    
+    # System configuration
+    descriptions[r"(?i)CONFIG"] = "Configuration field - System setting affecting overall system behavior"
+    descriptions[r"(?i)SETTING"] = "System setting field - Parameter controlling system functionality"
+    descriptions[r"(?i)PARAM(ETER)?"] = "Parameter field - System configuration option affecting behavior"
+    
+    return descriptions
 
 def get_field_info(field_value, field_descriptions):
     """
@@ -556,6 +560,107 @@ def custom_field_risk_assessment(field_name):
         
     return False, None
 
+def detect_debug_patterns(row):
+    """
+    Detect debugging and RFC patterns in SM20 logs.
+    Separates true debugging activities from normal service interface calls.
+    
+    Args:
+        row: DataFrame row containing potential debug data
+        
+    Returns:
+        Tuple of (risk_level, risk_factors_list)
+        Where risk_level can be 'Critical', 'High', 'Medium', 'Low', or None
+        And risk_factors_list is a list of risk factor descriptions
+    """
+    risk_factors = []
+    
+    # Get values with fallbacks for missing fields
+    var_2 = str(row.get('Variable_2', '')) if pd.notna(row.get('Variable_2', '')) else ''
+    var_first = str(row.get('Variable_First', '')) if pd.notna(row.get('Variable_First', '')) else ''
+    var_data = str(row.get('Variable_Data', '')) if pd.notna(row.get('Variable_Data', '')) else ''
+    username = str(row.get('User', '')) if pd.notna(row.get('User', '')) else ''
+    
+    # TRUE Debug event detection (I!, D!, G! flags)
+    if 'I!' in var_2:
+        risk_factors.append("Dynamic ABAP code execution detected (I!) - Internal/Insert operation that may bypass normal controls")
+        return 'High', risk_factors
+        
+    if 'D!' in var_2:
+        risk_factors.append("Debug session detected (D!) - User debugging program logic and potentially manipulating runtime variables")
+        return 'High', risk_factors
+    
+    # RFC/Gateway detection (G! flag)
+    if 'G!' in var_2:
+        risk_factors.append("Gateway/RFC call detected (G!) - Remote function call or service interface access")
+        return 'High', risk_factors
+    
+    # FireFighter detection combined with any suspicious activity
+    if username.startswith('FF_') and (var_2 in ['I!', 'D!', 'G!'] or 'R3TR' in var_first):
+        if var_2 in ['I!', 'D!', 'G!']:  # Only high risk for true debugging
+            risk_factors.append(f"FireFighter account performing privileged action ({var_2}) - Elevated risk due to privileged access")
+            return 'Critical', risk_factors
+        else:
+            risk_factors.append(f"FireFighter account accessing service interfaces - Standard but privileged activity")
+            return 'Medium', risk_factors
+    
+    # Service interface detection - normal operations, separate from debugging
+    if 'R3TR IWSV' in var_first or 'R3TR IWSG' in var_first:
+        risk_factors.append("Service interface access - Standard OData or API gateway activity")
+        return 'Low', risk_factors  # Lower risk level for normal operations
+    
+    # Gateway framework detection - normal operations, separate from debugging  
+    if 'R3TR G4BA' in var_first:
+        risk_factors.append("Gateway framework access - Standard SAP Gateway activity")
+        return 'Low', risk_factors
+    
+    # OData endpoint patterns - normal operations but potentially sensitive
+    if '/sap/opu/odata/' in var_data:
+        risk_factors.append("OData endpoint access - API-based data access")
+        return 'Medium', risk_factors
+    
+    return None, risk_factors
+
+def detect_debug_with_changes(session_df):
+    """
+    Detect debugging activities correlated with data changes in the same session.
+    
+    Args:
+        session_df: DataFrame containing session data
+        
+    Returns:
+        Modified DataFrame with updated risk assessments
+    """
+    # Create a copy to avoid warning
+    df = session_df.copy()
+    
+    # Group by session ID
+    for session_id, session_group in df.groupby('Session ID with Date'):
+        # Check for debug flags in Variable_2
+        debug_events = session_group[session_group['Variable_2'].isin(['I!', 'D!', 'G!'])]
+        
+        # Check for change indicators
+        change_events = session_group[session_group['Change_Indicator'].isin(['I', 'U', 'D'])]
+        
+        # If both debug events and changes exist in same session
+        if not debug_events.empty and not change_events.empty:
+            # Flag all debug events as Critical
+            for idx in debug_events.index:
+                df.loc[idx, 'risk_level'] = 'Critical'
+                current_factors = df.loc[idx, 'risk_factors']
+                new_factor = "Debugging activity with data changes in same session - High risk pattern indicating potential data manipulation"
+                df.loc[idx, 'risk_factors'] = current_factors + "; " + new_factor if current_factors else new_factor
+            
+            # Flag all change events as High
+            for idx in change_events.index:
+                if df.loc[idx, 'risk_level'] != 'Critical':  # Don't downgrade Critical events
+                    df.loc[idx, 'risk_level'] = 'High'
+                current_factors = df.loc[idx, 'risk_factors']
+                new_factor = "Data change during debug session - Suspicious pattern indicating potential targeted data manipulation"
+                df.loc[idx, 'risk_factors'] = current_factors + "; " + new_factor if current_factors else new_factor
+    
+    return df
+
 def classify_activity_type(row):
     """Classify the activity type based on the row data."""
     if pd.isna(row.get('TCode')) and pd.isna(row.get('Table')):
@@ -638,7 +743,11 @@ def assess_risk_session(session_data):
                 if any(table_mask):
                     risk_df.loc[table_mask, 'risk_level'] = 'High'
                     description = table_descriptions.get(table, f"Sensitive table '{table}' - Contains critical system data")
-                    risk_df.loc[table_mask, 'risk_factors'] = f"{description} (Table: {table})"
+                    # Get field descriptions for referencing in the lambda
+                    common_field_desc = get_common_field_descriptions()
+                    risk_df.loc[table_mask, 'risk_factors'] = risk_df.loc[table_mask].apply(
+                        lambda row: f"{description} (Table: {table}" + (f", Field: {get_field_info(row[SESSION_FIELD_COL], common_field_desc)}" if pd.notna(row[SESSION_FIELD_COL]) and row[SESSION_FIELD_COL].strip() != "" else "") + ")",
+                        axis=1)
         
         # Load the common transaction code descriptions dictionary
         common_tcode_descriptions = get_common_tcode_descriptions()
@@ -748,6 +857,39 @@ def assess_risk_session(session_data):
                     risk_df.loc[empty_factors_mask, 'risk_factors'] = risk_df.loc[empty_factors_mask].apply(
                         lambda x: f"Update operation (Change: {x[SESSION_CHANGE_IND_COL]}) - Existing record modified", axis=1)
         
+        # Apply debugging-specific risk assessment if variable fields are present
+        debug_fields_present = all(field in risk_df.columns for field in ['Variable_First', 'Variable_2', 'Variable_Data'])
+        if debug_fields_present:
+            log_message("Applying debugging pattern detection...")
+            
+            # Apply individual debug pattern detection to each row
+            for idx, row in risk_df.iterrows():
+                debug_risk_level, debug_risk_factors = detect_debug_patterns(row)
+                
+                if debug_risk_level and debug_risk_factors:
+                    # Override risk level if debug risk is higher
+                    current_level = risk_df.loc[idx, 'risk_level']
+                    if (debug_risk_level == 'Critical' or 
+                        (debug_risk_level == 'High' and current_level != 'Critical') or
+                        (debug_risk_level == 'Medium' and current_level not in ['Critical', 'High'])):
+                        risk_df.loc[idx, 'risk_level'] = debug_risk_level
+                    
+                    # Add debug risk factors to existing ones
+                    current_factors = risk_df.loc[idx, 'risk_factors']
+                    risk_df.loc[idx, 'risk_factors'] = current_factors + "; " + "; ".join(debug_risk_factors) if current_factors else "; ".join(debug_risk_factors)
+            
+            # Check for correlated debug and change events
+            if 'Session ID with Date' in risk_df.columns:
+                log_message("Analyzing debug activity correlation with data changes...")
+                risk_df = detect_debug_with_changes(risk_df)
+                
+                # Count critical risk after debugging analysis
+                critical_risk_count = len(risk_df[risk_df['risk_level'] == 'Critical'])
+                if critical_risk_count > 0:
+                    log_message(f"Found {critical_risk_count} critical risk events from debugging pattern analysis", "WARNING")
+        else:
+            log_message("Skipping debugging pattern detection - variable fields not present in dataset", "INFO")
+            
         # Add risk factors for Low risk items that don't have a factor yet
         low_risk_no_factor_mask = (risk_df['risk_level'] == 'Low') & (risk_df['risk_factors'] == '')
         if any(low_risk_no_factor_mask):
@@ -792,11 +934,12 @@ def assess_risk_session(session_data):
                     risk_df.loc[idx, 'risk_factors'] = f"Low risk activity - No sensitive data or system changes involved"
         
         # Count risk levels
+        critical_risk_count = len(risk_df[risk_df['risk_level'] == 'Critical'])
         high_risk_count = len(risk_df[risk_df['risk_level'] == 'High'])
         medium_risk_count = len(risk_df[risk_df['risk_level'] == 'Medium'])
         low_risk_count = len(risk_df[risk_df['risk_level'] == 'Low'])
         
-        log_message(f"Risk assessment complete. High: {high_risk_count}, Medium: {medium_risk_count}, Low: {low_risk_count}")
+        log_message(f"Risk assessment complete. Critical: {critical_risk_count}, High: {high_risk_count}, Medium: {medium_risk_count}, Low: {low_risk_count}")
         
         return risk_df
     
