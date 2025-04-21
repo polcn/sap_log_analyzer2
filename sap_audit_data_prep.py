@@ -176,8 +176,11 @@ def process_sm20(input_file, output_file):
         log_message(f"Original columns: {original_col_count}")
         
         # Convert all column headers to uppercase
-        df.columns = [col.upper() for col in df.columns]
+        df.columns = [col.strip().upper() for col in df.columns]  # Keep strip() from master
         log_message(f"Converted {original_col_count} column headers to UPPERCASE")
+
+        # Store original column names for later mapping
+        original_col_names = df.columns.tolist()  # Keep this line from v4.4.0-release
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
@@ -210,21 +213,22 @@ def process_sm20(input_file, output_file):
             'MSG. TEXT': SM20_MSG_COL,
             'MESSAGE': SM20_MSG_COL,
             'MESSAGE TEXT': SM20_MSG_COL,
-            
+
             # Variable field variations - based on SAP export behavior
             # First variable
             'FIRST VARIABLE': SM20_VAR_FIRST_COL,
             'VARIABLE 1': SM20_VAR_FIRST_COL,
             'VARIABLE_1': SM20_VAR_FIRST_COL,
             'VARIABLE1': SM20_VAR_FIRST_COL,
-            
+            'VAR1': SM20_VAR_FIRST_COL,
             # Second variable/data field - these are actually the same field with different labels
             'VARIABLE 2': SM20_VAR_2_COL,
             'VARIABLE_2': SM20_VAR_2_COL,
-            'VARIABLE2': SM20_VAR_2_COL,
+            'VARIABLE2': SM20_VAR_2_COL, # In some extracts (March)
+            'VAR2': SM20_VAR_DATA_COL,
             
             # Variable data field - contains important debugging details
-            'VARIABLE DATA': SM20_VAR_DATA_COL,
+            'VARIABLE DATA': SM20_VAR_DATA_COL, # In some extracts (March)
             'VARIABLE_DATA': SM20_VAR_DATA_COL,
             'VARIABLEDATA': SM20_VAR_DATA_COL,
             'VARIABLE DATA FOR MESSAGE': SM20_VAR_DATA_COL,
@@ -235,6 +239,7 @@ def process_sm20(input_file, output_file):
             'VARIABLE 3': SM20_VAR_DATA_COL,  # Also maps to VAR_DATA as per SAP's behavior
             'VARIABLE_3': SM20_VAR_DATA_COL,
             'VARIABLE3': SM20_VAR_DATA_COL,
+            'VAR3': SM20_VAR_DATA_COL
             
             # SysAid ticket reference field - preserve original format for tests
             'SYSAID #': 'SYSAID #',
@@ -247,7 +252,6 @@ def process_sm20(input_file, output_file):
         for old_name, new_name in field_mapping.items():
             if old_name in df.columns and new_name not in df.columns:
                 df = df.rename(columns={old_name: new_name})
-                log_message(f"Mapped SM20 column {old_name} → {new_name}")
         
         # Check for important fields
         important_sm20_fields = [
@@ -334,6 +338,7 @@ def process_cdhdr(input_file, output_file):
         df = clean_whitespace(df)
         
         # Handle field mapping for alternate field names that might be in raw exports
+
         # Enhanced based on the SAP's variable field dynamics across different exports
         field_mapping = {
             # Transaction code variations
