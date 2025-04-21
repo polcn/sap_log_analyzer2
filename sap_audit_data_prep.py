@@ -239,7 +239,7 @@ def process_sm20(input_file, output_file):
             'VARIABLE 3': SM20_VAR_DATA_COL,  # Also maps to VAR_DATA as per SAP's behavior
             'VARIABLE_3': SM20_VAR_DATA_COL,
             'VARIABLE3': SM20_VAR_DATA_COL,
-            'VAR3': SM20_VAR_DATA_COL
+            'VAR3': SM20_VAR_DATA_COL,
             
             # SysAid ticket reference field - preserve original format for tests
             'SYSAID #': 'SYSAID #',
