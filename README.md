@@ -101,15 +101,19 @@ The SAP Log Analyzer is a Python-based security auditing tool that analyzes SAP 
 ## Current Capabilities
 
 - Processes security audit logs (SM20) and change documents (CDHDR/CDPOS)
-- Detects debugging activities using multiple techniques (flags, message codes, patterns)
+- Detects debugging activities using multiple techniques (flags message codes patterns)
 - Identifies sophisticated patterns like authorization bypasses
-- Applies special attention to inventory data changes (potency, valuation)
-- Identifies risky transactions, sensitive field changes, and system access patterns
+- Applies special attention to inventory data changes (potency valuation)
+- Identifies risky transactions sensitive field changes and system access patterns
 - Generates comprehensive Excel reports with color-coded risk levels
 - Works with variable SAP export formats and column naming conventions
-- Provides clear, dual-format risk descriptions for both technical and non-technical reviewers
+- Provides clear dual-format risk descriptions for both technical and non-technical reviewers
 - Identifies potential "stealth changes" where authorization exists but no change records found
 - Integrates with SysAid ticketing system to provide business context for changes
+
+## Documentation
+
+- **Report Guide**: See [REPORT_GUIDE.md](REPORT_GUIDE.md) for detailed explanation of all report outputs, data sources, risk assessment methodologies, and how to interpret findings.
 
 ## Testing
 
