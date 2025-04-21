@@ -10,6 +10,14 @@ import pandas as pd
 import xlsxwriter
 from datetime import datetime
 
+# Import record counter and completeness output functions
+try:
+    from sap_audit_record_counts import record_counter
+    from sap_audit_tool_output_completeness import update_summary_with_completeness
+    RECORD_COUNTS_AVAILABLE = True
+except ImportError:
+    RECORD_COUNTS_AVAILABLE = False
+
 # Risk assessment configuration
 CRITICAL_RISK_COLOR = '#7030A0'  # Purple for Critical
 HIGH_RISK_COLOR = '#FFC7CE'      # Red for High
@@ -519,7 +527,7 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
             else:
                 log_message("No debug events found to display")
                 
-            # Sheet 5: Summary
+            # Sheet 5: Summary with record count completeness
             log_message("Creating Summary sheet...")
             
             # Determine which dataframe to use for summary
@@ -598,6 +606,14 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
             # Set column widths
             summary_worksheet.set_column(0, 0, 15)
             summary_worksheet.set_column(1, 1, 15)
+            
+            # Add completeness section if available
+            if 'RECORD_COUNTS_AVAILABLE' in globals() and RECORD_COUNTS_AVAILABLE:
+                try:
+                    update_summary_with_completeness(wb, summary_worksheet, record_counter)
+                    log_message("Added data completeness information to Summary sheet")
+                except Exception as e:
+                    log_message(f"Warning: Could not add completeness information: {str(e)}", "WARNING")
 
             # Sheet 5: Header Color Legend
             log_message("Creating Header Legend sheet...")

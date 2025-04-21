@@ -13,12 +13,16 @@ from datetime import datetime
 # Import common utilities
 try:
     from sap_audit_utils import log_message
+    from sap_audit_record_counts import record_counter
 except ImportError:
     # Fallback if utils not available
     def log_message(message, level="INFO"):
         """Log a message with timestamp and level."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {level}: {message}")
+    
+    # Placeholder if record counter not available
+    from sap_audit_record_counts import record_counter
 
 # Constants
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -98,7 +102,18 @@ def load_sysaid_data():
             log_message(f"No ticket column found. Looked for: {', '.join(SYSAID_TICKET_COL_OPTIONS)}", "WARNING")
             return None
             
-        log_message(f"Loaded SysAid data with {len(sysaid_df)} tickets")
+        # Record count for completeness tracking
+        record_count = len(sysaid_df)
+        log_message(f"Loaded SysAid data with {record_count} tickets")
+        
+        # Update record counter
+        record_counter.update_source_counts(
+            source_type="sysaid",
+            file_name=SYSAID_FILE,
+            original_count=record_count,
+            final_count=record_count
+        )
+        
         return sysaid_df
         
     except Exception as e:
@@ -218,6 +233,15 @@ def merge_sysaid_data(session_df, sysaid_df):
                     ticket_count += 1
             
             log_message(f"Added SysAid ticket information to {ticket_count} rows in the session data")
+            
+            # Update the final count in record counter
+            if SYSAID_TICKET_COL:
+                record_counter.update_source_counts(
+                    source_type="sysaid",
+                    file_name=SYSAID_FILE,
+                    original_count=len(sysaid_df),
+                    final_count=ticket_count
+                )
         
         return result_df
         

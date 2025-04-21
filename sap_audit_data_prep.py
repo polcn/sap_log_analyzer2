@@ -8,6 +8,7 @@ This script prepares SAP log data files for the main audit tool by:
 3. Creating datetime columns from date and time fields
 4. Sorting data by user and datetime
 5. Saving the processed files as CSV with UTF-8-sig encoding in the same input folder
+6. Tracking record counts for completeness verification
 """
 
 import os
@@ -15,6 +16,9 @@ import sys
 import glob
 import pandas as pd
 from datetime import datetime, timedelta
+
+# Import the record counter
+from sap_audit_record_counts import record_counter
 
 # --- Configuration ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -171,6 +175,10 @@ def process_sm20(input_file, output_file):
             log_message(f"Warning: SM20 file is empty: {input_file}", "WARNING")
             return False
             
+        # Store original record count for completeness tracking
+        original_count = len(df)
+        log_message(f"Original SM20 records: {original_count}")
+        
         # Store original column count
         original_col_count = len(df.columns)
         log_message(f"Original columns: {original_col_count}")
@@ -184,6 +192,10 @@ def process_sm20(input_file, output_file):
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
+        
+        # Record count after cleaning
+        after_cleaning_count = len(df)
+        log_message(f"SM20 records after cleaning: {after_cleaning_count}")
         
         # Handle field mapping for SM20 columns that may have different names in different extracts
         # This is based on SAP's dynamic column behavior where field labels can change based on
@@ -297,7 +309,20 @@ def process_sm20(input_file, output_file):
         # Save the processed file
         log_message(f"Saving processed SM20 file to: {output_file}")
         df.to_csv(output_file, index=False, encoding='utf-8-sig')
-        log_message(f"Successfully saved {len(df)} rows to {output_file}")
+        
+        # Record final count
+        final_count = len(df)
+        log_message(f"Successfully saved {final_count} rows to {output_file}")
+        
+        # Update record counter
+        record_counter.update_source_counts(
+            source_type="sm20",
+            file_name=input_file,
+            original_count=original_count,
+            after_cleaning=after_cleaning_count,
+            final_count=final_count
+        )
+        
         return True
         
     except Exception as e:
@@ -325,6 +350,10 @@ def process_cdhdr(input_file, output_file):
         if df.empty:
             log_message(f"Warning: CDHDR file is empty: {input_file}", "WARNING")
             return False
+        
+        # Store original record count for completeness tracking
+        original_count = len(df)
+        log_message(f"Original CDHDR records: {original_count}")
             
         # Store original column count
         original_col_count = len(df.columns)
@@ -336,6 +365,10 @@ def process_cdhdr(input_file, output_file):
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
+        
+        # Record count after cleaning
+        after_cleaning_count = len(df)
+        log_message(f"CDHDR records after cleaning: {after_cleaning_count}")
         
         # Handle field mapping for alternate field names that might be in raw exports
 
@@ -429,7 +462,20 @@ def process_cdhdr(input_file, output_file):
         # Save the processed file
         log_message(f"Saving processed CDHDR file to: {output_file}")
         df.to_csv(output_file, index=False, encoding='utf-8-sig')
-        log_message(f"Successfully saved {len(df)} rows to {output_file}")
+        
+        # Record final count
+        final_count = len(df)
+        log_message(f"Successfully saved {final_count} rows to {output_file}")
+        
+        # Update record counter
+        record_counter.update_source_counts(
+            source_type="cdhdr",
+            file_name=input_file,
+            original_count=original_count,
+            after_cleaning=after_cleaning_count,
+            final_count=final_count
+        )
+        
         return True
         
     except Exception as e:
@@ -455,6 +501,10 @@ def process_cdpos(input_file, output_file):
         if df.empty:
             log_message(f"Warning: CDPOS file is empty: {input_file}", "WARNING")
             return False
+        
+        # Store original record count for completeness tracking
+        original_count = len(df)
+        log_message(f"Original CDPOS records: {original_count}")
             
         # Store original column count
         original_col_count = len(df.columns)
@@ -466,6 +516,10 @@ def process_cdpos(input_file, output_file):
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
+        
+        # Record count after cleaning
+        after_cleaning_count = len(df)
+        log_message(f"CDPOS records after cleaning: {after_cleaning_count}")
         
         # Check for important fields
         important_cdpos_fields = [
@@ -506,7 +560,20 @@ def process_cdpos(input_file, output_file):
         # Save the processed file
         log_message(f"Saving processed CDPOS file to: {output_file}")
         df.to_csv(output_file, index=False, encoding='utf-8-sig')
-        log_message(f"Successfully saved {len(df)} rows to {output_file}")
+        
+        # Record final count
+        final_count = len(df)
+        log_message(f"Successfully saved {final_count} rows to {output_file}")
+        
+        # Update record counter
+        record_counter.update_source_counts(
+            source_type="cdpos",
+            file_name=input_file,
+            original_count=original_count,
+            after_cleaning=after_cleaning_count,
+            final_count=final_count
+        )
+        
         return True
         
     except Exception as e:

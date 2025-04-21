@@ -34,6 +34,9 @@ try:
     # Import SysAid integration module
     from sap_audit_sysaid import load_sysaid_data, merge_sysaid_data
     
+    # Import record counter for completeness tracking
+    from sap_audit_record_counts import record_counter
+    
     # Also import the reference data and detectors for advanced functionality
     from sap_audit_reference_data import (
         get_sensitive_tables, get_sensitive_tcodes, get_critical_field_patterns,
@@ -241,7 +244,11 @@ def main():
             session_df.loc[:, "risk_level"] = "Unknown"
             session_df.loc[:, "risk_description"] = "Risk assessment failed: Analysis could not be completed on this data. [Technical: Risk assessment function encountered an error]"
         
-        # Step 4: Generate Excel output with session data
+        # Step 4: Update timeline record count for completeness tracking
+        log_message("Updating record counts for completeness tracking...")
+        record_counter.update_timeline_count(len(session_df))
+        
+        # Step 5: Generate Excel output with session data
         # Sort chronologically by session ID first, then by timestamp within session, then by risk level
         # Extract the numeric part of session IDs for proper numerical sorting
         log_message("Preparing chronological sorting...")

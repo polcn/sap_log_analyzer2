@@ -133,10 +133,21 @@ Provides an overview of the analysis results:
 |---------|---------|
 | Analysis Summary | Total events analyzed, date range, risk distribution |
 | Risk Distribution | Counts and percentages of each risk level |
+| Data Completeness | Record counts from source files and reconciliation metrics |
 | Top Risky Users | Users with the most high/critical risk activities |
 | Top Risky Transactions | Transactions associated with the most high/critical risk |
 | SysAid Coverage | Percentage of activities with associated tickets |
 | Suspicious Patterns | Identified patterns that merit investigation |
+
+The **Data Completeness** section shows how many records from each source file made it into the final report:
+
+| Element | Description |
+|---------|-------------|
+| Overall Completeness Score | Percentage of source records included in the timeline |
+| Source File Breakdown | Record counts from each source file (SM20, CDHDR, CDPOS, SysAid) |
+| Original Records | Number of records in the source file before processing |
+| Final Records | Number of records included in the final report |
+| Inclusion Rate | Percentage of records from each source included in the report |
 
 ### Header Legend Sheet
 
