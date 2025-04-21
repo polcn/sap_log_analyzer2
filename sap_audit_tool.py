@@ -49,13 +49,13 @@ try:
         ANALYZER_AVAILABLE = False
         log_message("Analyzer module not available. Skipping automated analysis.", "WARNING")
     
-    print("Using SAP Audit Risk Assessment modular architecture v4.3.0")
+    print("Using SAP Audit Risk Assessment modular architecture v4.4.0")
 except ImportError as e:
     print(f"Error: Required modules not found: {str(e)}. Please ensure all modular components are in the same directory.")
     sys.exit(1)
 
 # --- Configuration ---
-VERSION = "4.3.0"  # Updated with Automated Analysis and Enhanced Debugging Detection (April 2025)
+VERSION = "4.4.0"  # Updated with SysAid Integration, Improved Field Handling, and Enhanced Debugging Detection (April 2025)
 
 # Get the script directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
