@@ -28,6 +28,9 @@ htmlcov/
 # Temporary files
 *.log
 *.tmp
+*.bak
+*_version
+*_sysaid_version
 .DS_Store
 Thumbs.db
 
