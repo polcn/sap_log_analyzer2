@@ -15,6 +15,7 @@ CRITICAL_RISK_COLOR = '#7030A0'  # Purple for Critical
 HIGH_RISK_COLOR = '#FFC7CE'      # Red for High
 MEDIUM_RISK_COLOR = '#FFEB9C'    # Yellow for Medium
 LOW_RISK_COLOR = '#C6EFCE'       # Green for Low
+SYSAID_COLOR = '#D9D2E9'         # Light Purple for SysAid ticket information
 
 # --- Essential Columns for Reporting ---
 # Define which columns to keep in the output for each sheet
@@ -82,7 +83,16 @@ SESSION_ESSENTIAL_COLUMNS = [
     'Object_ID',             # Object ID
     'Doc_Number',            # Change document reference
     'risk_level',            # Assessed risk level
-    'risk_factors'           # Explanation of risk assessment
+    'sap_risk_level',        # SAP's native risk classification
+    'risk_description',      # Explanation of risk assessment (renamed from risk_factors)
+    # SysAid ticket fields - grouped together after risk description
+    'SYSAID #',              # SysAid ticket number reference
+    'Title',                 # SysAid ticket title
+    'SysAid Description',    # SysAid ticket description (renamed to avoid column name conflict)
+    'Notes',                 # SysAid ticket notes
+    'Request user',          # SysAid ticket requester
+    'Process manager',       # SysAid ticket manager
+    'Request time'           # SysAid ticket request time
 ]
 
 def log_message(message, level="INFO"):
@@ -92,7 +102,7 @@ def log_message(message, level="INFO"):
 
 def apply_custom_headers(worksheet, df, wb):
     """Apply custom formatting to Excel worksheet headers based on data source."""
-    # Map columns to their source systems
+        # Map columns to their source systems
     column_sources = {
         'SM20_Datetime': 'SM20',
         'SOURCE TA': 'SM20',
@@ -106,7 +116,8 @@ def apply_custom_headers(worksheet, df, wb):
         'NEW VALUE': 'CDPOS',
         'OLD VALUE': 'CDPOS',
         'risk_level': 'Generated',
-        'risk_factors': 'Generated',
+        'risk_description': 'Generated',
+        'sap_risk_level': 'Generated',
         'DOC.NUMBER': 'CDHDR',
         'OBJECT': 'CDHDR',
         'OBJECT VALUE': 'CDHDR',
@@ -126,7 +137,19 @@ def apply_custom_headers(worksheet, df, wb):
         'Description': 'SM20',
         'Object': 'CDHDR',
         'Object_ID': 'CDHDR',
-        'Doc_Number': 'CDHDR'
+        'Doc_Number': 'CDHDR',
+        # SysAid ticket fields
+        'SYSAID #': 'SysAid',
+        'Title': 'SysAid',
+        'SysAid Description': 'SysAid',  # Only use the new renamed column for SysAid description
+        'Notes': 'SysAid',
+        'Request user': 'SysAid',
+        'Process manager': 'SysAid',
+        'Request time': 'SysAid',
+        # Additional fields for expanded SysAid integration
+        'SysAid Title': 'SysAid',
+        'SysAid Notes': 'SysAid',
+        'SysAid Request User': 'SysAid'
     }
 
     # Define formatting for each source system
@@ -134,15 +157,16 @@ def apply_custom_headers(worksheet, df, wb):
         'SM20': wb.add_format({'bold': True, 'bg_color': '#FFD966', 'border': 1, 'text_wrap': True, 'valign': 'top'}),
         'CDHDR': wb.add_format({'bold': True, 'bg_color': '#9BC2E6', 'border': 1, 'text_wrap': True, 'valign': 'top'}),
         'CDPOS': wb.add_format({'bold': True, 'bg_color': '#C6E0B4', 'border': 1, 'text_wrap': True, 'valign': 'top'}),
-        'Generated': wb.add_format({'bold': True, 'bg_color': '#F4B084', 'border': 1, 'text_wrap': True, 'valign': 'top'})
+        'Generated': wb.add_format({'bold': True, 'bg_color': '#F4B084', 'border': 1, 'text_wrap': True, 'valign': 'top'}),
+        'SysAid': wb.add_format({'bold': True, 'bg_color': SYSAID_COLOR, 'border': 1, 'text_wrap': True, 'valign': 'top'})
     }
 
     # Apply formatting to each column
     for i, col in enumerate(df.columns):
         # Set appropriate column widths based on content type
         width = max(len(str(col)) + 2, 15)
-        if "factors" in col.lower() or "rationale" in col.lower():
-            width = 80
+        if "factors" in col.lower() or "rationale" in col.lower() or "description" in col.lower():
+            width = 100  # Increased width for more detailed risk descriptions
         elif "Msg" in col or "TEXT" in col or "Description" in col:
             width = 60
         elif col in ("Change_Timestamp", "SM20_Datetime", "Datetime"):
@@ -185,24 +209,38 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
             
             # Second pass: Convert ALL columns to strings and replace any 'nan' or 'None' text
             for col in df_clean.columns:
-                # Convert to string
-                df_clean[col] = df_clean[col].astype(str)
-                
-                # Replace literal 'nan' strings (case insensitive) with empty string
-                df_clean[col] = df_clean[col].str.replace('nan', '', case=False)
-                
-                # Also replace 'None' strings (case insensitive)
-                df_clean[col] = df_clean[col].str.replace('None', '', case=False)
-                
-                # Replace the string 'NaN' specifically
-                df_clean[col] = df_clean[col].str.replace('NaN', '', case=False)
+                # Convert to string and handle potential errors
+                try:
+                    # First convert to string
+                    df_clean[col] = df_clean[col].astype(str)
+                    
+                    # Then use string methods on the series
+                    if hasattr(df_clean[col], 'str'):
+                        # Replace literal 'nan' strings (case insensitive) with empty string
+                        df_clean[col] = df_clean[col].str.replace('nan', '', case=False)
+                        
+                        # Also replace 'None' strings (case insensitive)
+                        df_clean[col] = df_clean[col].str.replace('None', '', case=False)
+                        
+                        # Replace the string 'NaN' specifically
+                        df_clean[col] = df_clean[col].str.replace('NaN', '', case=False)
+                except Exception as e:
+                    # If there's any error, just convert to string directly
+                    df_clean[col] = df_clean[col].apply(lambda x: '' if pd.isna(x) else str(x))
                 
                 # Fix artifacts where we might end up with weird spacing
-                df_clean[col] = df_clean[col].str.strip()
-                
+                try:
+                    if hasattr(df_clean[col], 'str'):
+                        df_clean[col] = df_clean[col].str.strip()
+                except Exception:
+                    pass
+                    
                 # If we converted a number to an empty string (because it was NaN), 
                 # it becomes '', but for display it should stay empty
-                df_clean[col] = df_clean[col].replace('', '')
+                try:
+                    df_clean[col] = df_clean[col].replace('', '')
+                except Exception:
+                    pass
             
             return df_clean
         
@@ -364,96 +402,122 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
                         'format': wb.add_format({'bg_color': LOW_RISK_COLOR})
                     })
 
-            # Sheet 4: Debug Activities (if variable fields are present)
-            debug_fields_present = all(field in session_filtered.columns for field in ['Variable_First', 'Variable_2', 'Variable_Data'])
-            if debug_fields_present:
-                log_message("Creating Debug Activities sheet...")
+            # Sheet 4: Debug Activities - Always attempt to create regardless of variable fields present
+            log_message("Creating Debug Activities sheet...")
+            
+            # Log which variable fields are present for debugging purposes
+            var_fields = [col for col in session_filtered.columns if 'variable' in col.lower() or 'var_' in col.lower()]
+            log_message(f"Variable-like fields found: {', '.join(var_fields) if var_fields else 'None'}")
+            
+            # Create a filter for debug-related activities
+            # Create query conditions based on column availability
+            conditions = []
+            
+            # Check for debug markers in Variable_2
+            if 'Variable_2' in session_filtered.columns:
+                conditions.append(session_filtered['Variable_2'].str.contains('I!|D!|G!', na=False))
+            
+            # FireFighter accounts with high risk activities
+            if 'User' in session_filtered.columns and 'risk_level' in session_filtered.columns:
+                conditions.append(
+                    (session_filtered['User'].str.startswith('FF_', na=False)) & 
+                    (session_filtered['risk_level'].isin(['High', 'Critical']))
+                )
+            
+            # Check for debug mentions in risk description or risk_factors
+            risk_desc_col = 'risk_description' if 'risk_description' in session_filtered.columns else 'risk_factors'
+            if risk_desc_col in session_filtered.columns:
+                conditions.append(
+                    session_filtered[risk_desc_col].str.contains('debug session detected|dynamic abap code execution', 
+                                                               case=False, na=False)
+                )
+            
+            # Combine conditions with OR logic
+            if conditions:
+                combined_condition = conditions[0]
+                for condition in conditions[1:]:
+                    combined_condition = combined_condition | condition
+                debug_events = session_filtered[combined_condition]
+            else:
+                debug_events = pd.DataFrame(columns=session_filtered.columns)
+            
+            if not debug_events.empty:
+                # Convert NaN values to empty strings for better display
+                                    
+                # Count records by category for analysis
+                debug_count = len(debug_events)
                 
-                # Create a filter for debug-related activities
-                debug_events = session_filtered[
-                    # Only actual debug activities with debug markers
-                    (session_filtered['Variable_2'].str.contains('I!|D!|G!', na=False)) |
-                    
-                    # FireFighter accounts with high risk activities
-                    ((session_filtered['User'].str.startswith('FF_', na=False)) & 
-                     (session_filtered['risk_level'].isin(['High', 'Critical']))) |
-                    
-                    # Explicit debug mentioned in risk factors (true debugging only)
-                    (session_filtered['risk_factors'].str.contains('debug session detected|dynamic abap code execution', 
-                                                                 case=False, na=False))
-                ]
-                
-                if not debug_events.empty:
-                    # Convert NaN values to empty strings for better display
-                                        
-                    # Count records by category for analysis
-                    debug_count = len(debug_events)
+                # Count debug markers if Variable_2 exists
+                true_debug_markers = 0
+                if 'Variable_2' in debug_events.columns:
                     true_debug_markers = len(debug_events[debug_events['Variable_2'].str.contains('I!|D!|G!', na=False)])
+                
+                # Count FireFighter high risk activities
+                firefighter_high_risk = 0
+                if 'User' in debug_events.columns and 'risk_level' in debug_events.columns:
                     firefighter_high_risk = len(debug_events[
                         (debug_events['User'].str.startswith('FF_', na=False)) & 
                         (debug_events['risk_level'].isin(['High', 'Critical']))
                     ])
+                
+                log_message(f"Debug activity statistics:")
+                log_message(f"  - True debug markers (I!, D!, G!): {true_debug_markers}")
+                log_message(f"  - FireFighter high risk activities: {firefighter_high_risk}")
+                log_message(f"  - Total debug activities: {debug_count}")
+                debug_events_fixed = debug_events.fillna('')
+                debug_events_fixed.to_excel(writer, sheet_name="Debug_Activities", index=False, na_rep="")
+                ws_debug = writer.sheets["Debug_Activities"]
+                apply_custom_headers(ws_debug, debug_events_fixed, wb)
+                ws_debug.autofilter(0, 0, len(debug_events), len(debug_events.columns) - 1)
+                ws_debug.freeze_panes(1, 0)
+                
+                # Add special formatting for FireFighter accounts
+                ff_format = wb.add_format({'bg_color': '#FF0000', 'font_color': '#FFFFFF'})
+                ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
+                    'type': 'formula',
+                    'criteria': '=LEFT(C2,3)="FF_"',  # Assumes C is the User column
+                    'format': ff_format
+                })
+                
+                # Apply risk level conditional formatting
+                if 'risk_level' in debug_events.columns:
+                    risk_col_idx = debug_events.columns.get_loc('risk_level')
                     
-                    log_message(f"Debug activity statistics:")
-                    log_message(f"  - True debug markers (I!, D!, G!): {true_debug_markers}")
-                    log_message(f"  - FireFighter high risk activities: {firefighter_high_risk}")
-                    log_message(f"  - Total debug activities: {debug_count}")
-                    debug_events_fixed = debug_events.fillna('')
-                    debug_events_fixed.to_excel(writer, sheet_name="Debug_Activities", index=False, na_rep="")
-                    ws_debug = writer.sheets["Debug_Activities"]
-                    apply_custom_headers(ws_debug, debug_events_fixed, wb)
-                    ws_debug.autofilter(0, 0, len(debug_events), len(debug_events.columns) - 1)
-                    ws_debug.freeze_panes(1, 0)
-                    
-                    # Add special formatting for FireFighter accounts
-                    ff_format = wb.add_format({'bg_color': '#FF0000', 'font_color': '#FFFFFF'})
+                    # Format for Critical risk
                     ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
-                        'type': 'formula',
-                        'criteria': '=LEFT(C2,3)="FF_"',  # Assumes C is the User column
-                        'format': ff_format
+                        'type': 'cell',
+                        'criteria': 'equal to',
+                        'value': '"Critical"',
+                        'format': wb.add_format({'bg_color': '#7030A0', 'font_color': '#FFFFFF'})  # Purple for Critical
                     })
                     
-                    # Apply risk level conditional formatting
-                    if 'risk_level' in debug_events.columns:
-                        risk_col_idx = debug_events.columns.get_loc('risk_level')
-                        
-                        # Format for Critical risk
-                        ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
-                            'type': 'cell',
-                            'criteria': 'equal to',
-                            'value': '"Critical"',
-                            'format': wb.add_format({'bg_color': '#7030A0', 'font_color': '#FFFFFF'})  # Purple for Critical
-                        })
-                        
-                        # Format for High risk
-                        ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
-                            'type': 'cell',
-                            'criteria': 'equal to',
-                            'value': '"High"',
-                            'format': wb.add_format({'bg_color': HIGH_RISK_COLOR})
-                        })
-                        
-                        # Format for Medium risk
-                        ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
-                            'type': 'cell',
-                            'criteria': 'equal to',
-                            'value': '"Medium"',
-                            'format': wb.add_format({'bg_color': MEDIUM_RISK_COLOR})
-                        })
-                        
-                        # Format for Low risk
-                        ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
-                            'type': 'cell',
-                            'criteria': 'equal to',
-                            'value': '"Low"',
-                            'format': wb.add_format({'bg_color': LOW_RISK_COLOR})
-                        })
+                    # Format for High risk
+                    ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
+                        'type': 'cell',
+                        'criteria': 'equal to',
+                        'value': '"High"',
+                        'format': wb.add_format({'bg_color': HIGH_RISK_COLOR})
+                    })
                     
-                    log_message(f"Added {len(debug_events)} debug events to Debug Activities sheet")
-                else:
-                    log_message("No debug events found to display")
+                    # Format for Medium risk
+                    ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
+                        'type': 'cell',
+                        'criteria': 'equal to',
+                        'value': '"Medium"',
+                        'format': wb.add_format({'bg_color': MEDIUM_RISK_COLOR})
+                    })
+                    
+                    # Format for Low risk
+                    ws_debug.conditional_format(1, 0, len(debug_events), len(debug_events.columns) - 1, {
+                        'type': 'cell',
+                        'criteria': 'equal to',
+                        'value': '"Low"',
+                        'format': wb.add_format({'bg_color': LOW_RISK_COLOR})
+                    })
+                
+                log_message(f"Added {len(debug_events)} debug events to Debug Activities sheet")
             else:
-                log_message("Skipping Debug Activities sheet - variable fields not present in dataset")
+                log_message("No debug events found to display")
                 
             # Sheet 5: Summary
             log_message("Creating Summary sheet...")
@@ -538,12 +602,13 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
             # Sheet 5: Header Color Legend
             log_message("Creating Header Legend sheet...")
             legend_df = pd.DataFrame({
-                'Source': ['SM20', 'CDHDR', 'CDPOS', 'Generated'],
+                'Source': ['SM20', 'CDHDR', 'CDPOS', 'Generated', 'SysAid'],
                 'Description': [
                     'SM20 Security Audit Log fields',
                     'CDHDR Change Document Header fields',
                     'CDPOS Change Document Item fields',
-                    'Generated or derived fields by the tool'
+                    'Generated or derived fields by the tool',
+                    'SysAid ticket information fields'
                 ]
             })
             legend_df.to_excel(writer, sheet_name="Legend_Header_Colors", index=False, na_rep="")
@@ -554,7 +619,8 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
                 'SM20': '#FFD966',
                 'CDHDR': '#9BC2E6',
                 'CDPOS': '#C6E0B4',
-                'Generated': '#F4B084'
+                'Generated': '#F4B084',
+                'SysAid': SYSAID_COLOR
             }
 
             for row_idx in range(len(legend_df)):

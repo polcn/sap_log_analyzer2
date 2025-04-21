@@ -31,6 +31,9 @@ try:
     from sap_audit_tool_risk_assessment import assess_risk_session
     from sap_audit_tool_output import generate_excel_output
     
+    # Import SysAid integration module
+    from sap_audit_sysaid import load_sysaid_data, merge_sysaid_data
+    
     # Also import the reference data and detectors for advanced functionality
     from sap_audit_reference_data import (
         get_sensitive_tables, get_sensitive_tcodes, get_critical_field_patterns,
@@ -257,6 +260,16 @@ def main():
         session_df = session_df.drop(['Session_ID_Numeric', 'Risk_Sort'], axis=1)
         
         log_message("Sorting complete. Data ordered chronologically by session number.")
+        
+        # Load and merge SysAid ticket information
+        log_message("Loading SysAid ticket information...")
+        sysaid_df = load_sysaid_data()
+        if sysaid_df is not None:
+            log_message(f"Loaded {len(sysaid_df)} SysAid tickets")
+            # Merge SysAid data with session data
+            session_df = merge_sysaid_data(session_df, sysaid_df)
+        else:
+            log_message("No SysAid data loaded. Proceeding without ticket information.", "WARNING")
         
         # Generate Excel output with session data (empty dataframes for legacy mode)
         generate_excel_output(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), session_df, OUTPUT_FILE)

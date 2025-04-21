@@ -1,4 +1,4 @@
-# SAP Log Analyzer (v4.3.0)
+# SAP Log Analyzer (v4.4.0)
 
 ## Project Overview
 
@@ -8,6 +8,10 @@ The SAP Log Analyzer is a Python-based security auditing tool that analyzes SAP 
 
 1. **Data Preparation** (`sap_audit_data_prep.py`)
    - Standardizes SAP export formats with flexible field mapping
+   - Handles various column naming conventions across different SAP exports
+   - Enhanced NaN value handling for cleaner output files
+   - Robust error handling and whitespace cleaning
+   - Preserves SysAid ticket references for helpdesk integration
 
 2. **Session Merger** (`SAP Log Session Merger.py`)
    - Combines multiple log sources into a unified timeline
@@ -28,6 +32,16 @@ The SAP Log Analyzer is a Python-based security auditing tool that analyzes SAP 
    - Creates both text summary and interactive HTML reports
 
 ## Recent Improvements
+
+### v4.4.0 (April 2025)
+
+#### SysAid Ticket Integration
+- Added integration with SysAid helpdesk system to associate SAP activities with ticket information
+- New module `sap_audit_sysaid.py` for loading and processing SysAid ticket data
+- Support for linking SAP logs and change documents to helpdesk tickets via "SysAid #" field
+- Enhanced reporting with helpdesk ticket context (title, description, notes, requestor, etc.)
+- Color-coded SysAid fields in Excel reports for easy identification
+- Provides business context for changes through associated ticketing system
 
 ### v4.3.0 (April 2025)
 
@@ -95,3 +109,28 @@ The SAP Log Analyzer is a Python-based security auditing tool that analyzes SAP 
 - Works with variable SAP export formats and column naming conventions
 - Provides clear, dual-format risk descriptions for both technical and non-technical reviewers
 - Identifies potential "stealth changes" where authorization exists but no change records found
+- Integrates with SysAid ticketing system to provide business context for changes
+
+## Testing
+
+The project includes comprehensive test suites for validating functionality:
+
+1. **Data Preparation Testing** (`test_sap_audit_data_prep.py`)
+   - Validates field mapping and column standardization
+   - Tests NaN value handling and special character processing
+   - Verifies flexible column name recognition
+
+2. **SysAid Integration Testing** (`test_sap_audit_sysaid.py`)
+   - Tests SysAid ticket data loading with different formats
+   - Validates merging of ticket data with session timeline
+   - Verifies Excel formatting of SysAid fields
+
+3. **Results Validation Testing** (`test_sap_audit_results.py`)
+   - Comprehensive end-to-end testing with known patterns
+   - Validates risk assessment algorithms
+   - Tests output file generation and content
+   - Flexible testing framework for both test patterns and real data
+
+4. **Running the Tests**
+   - Execute individual test suites with: `python test_sap_audit_data_prep.py`
+   - All tests are designed to be compatible with both synthetic test data and real-world SAP exports

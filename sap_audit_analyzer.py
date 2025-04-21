@@ -341,7 +341,13 @@ def analyze_debug_activities(dfs):
                 
             flag_count = 0
             for col in columns_to_check:
-                flag_count += timeline_df[col].str.contains(f"\\b{flag}\\b", regex=True, na=False).sum()
+                try:
+                    # First, ensure we only use str methods on string columns
+                    if timeline_df[col].dtype == 'object':
+                        # Try to use string methods safely
+                        flag_count += timeline_df[col].astype(str).str.contains(f"\\b{flag}\\b", regex=True, na=False).sum()
+                except Exception as e:
+                    log_message(f"Warning: Error checking for debug flags in column {col}: {str(e)}", "WARNING")
                 
             if flag_count > 0:
                 result["by_type"][f"{flag}_flag"] = flag_count

@@ -2,6 +2,28 @@
 
 All notable changes to the SAP Log Analyzer will be documented in this file.
 
+## [4.4.0] - April 2025
+
+### Added
+- SysAid ticket integration with SAP log data
+- New module `sap_audit_sysaid.py` to load and process SysAid ticket information
+- Support for linking SAP activities to helpdesk tickets via "SysAid #" field
+- Additional fields from SysAid tickets in reports (Title, Description, Notes, Request User, Process Manager, Request Time)
+- Distinct color-coding for SysAid fields in Excel output (light purple)
+- Updated legend in Excel output to include SysAid ticket information
+- Comprehensive test suite for data preparation and SysAid integration modules
+
+### Changed
+- Modified data preparation to preserve "SysAid #" field in input files
+- Enhanced Excel output to display and properly format SysAid ticket information
+- Renamed SysAid description column to "SysAid Description" to avoid column name conflict with SAP log description
+
+### Fixed
+- Issue with duplicate Description columns by using distinct column names for SysAid tickets
+- Improved NaN value handling in display output to prevent "nan" strings in reports
+- Fixed indentation error in `sap_audit_data_prep.py` that was causing script execution to fail
+- Enhanced function structure in data preparation module for better code organization
+
 ## [4.3.0] - April 2025
 
 ### Added

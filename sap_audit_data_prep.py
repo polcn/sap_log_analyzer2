@@ -66,7 +66,7 @@ CDPOS_VALUE_NEW_COL = 'NEW VALUE'
 CDPOS_VALUE_OLD_COL = 'OLD VALUE'
 
 # Fields to exclude (as per user request)
-EXCLUDE_FIELDS = ['SYSAID #', 'COMMENTS']
+EXCLUDE_FIELDS = ['COMMENTS']  # Removed 'SYSAID #' to include it in processing
 
 # Date/Time format
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'  # Matches '2025-03-10 19:17:23' format
@@ -85,19 +85,86 @@ def find_latest_file(pattern):
     return max(files, key=os.path.getmtime)
 
 def clean_whitespace(df):
-    """Clean whitespace from all string columns in the dataframe."""
-    log_message("Cleaning whitespace from string columns...")
+    """
+    Clean whitespace from all columns in the dataframe and handle NaN values.
     
+    This function performs multi-stage cleaning:
+    1. Replaces all NaN values with empty strings
+    2. For string columns: trims whitespace and replaces 'nan' text with empty strings
+    3. For numeric columns: preserves data type while replacing NaN values appropriately
+    
+    Args:
+        df (pandas.DataFrame): The dataframe to clean
+        
+    Returns:
+        pandas.DataFrame: The cleaned dataframe
+    """
+    log_message("Cleaning whitespace and handling NaN values...")
+    
+    # Make a copy to avoid modifying the original
+    df = df.copy()
+    
+    # First pass: Replace NaN values with empty strings in all columns
+    df = df.fillna('')
+    
+    # Second pass: Process all columns to ensure consistent data
+    nan_replaced_count = 0
     for col in df.columns:
-        if df[col].dtype == 'object':  # Only process string/object columns
+        # Convert to string and remove whitespace for object columns
+        if df[col].dtype == 'object':  # String columns
+            # First ensure proper string conversion and strip whitespace
             df[col] = df[col].astype(str).str.strip()
             
+            # Replace 'nan' or 'NaN' strings that might have come from NaN values
+            # Use more robust replacement to catch variations
+            nan_pattern = r'^nan$|^NaN$|^NAN$'
+            nan_mask = df[col].str.match(nan_pattern, case=False)
+            nan_count = nan_mask.sum()
+            if nan_count > 0:
+                df.loc[nan_mask, col] = ''
+                nan_replaced_count += nan_count
+        else:  # Numeric columns - need to handle differently
+            # For numeric columns, we need to preserve their data type
+            # But still replace NaN with empty string for display purposes
+            
+            # First identify NaN values
+            nan_mask = df[col].isna() | (df[col].astype(str).str.lower() == 'nan')
+            
+            if nan_mask.any():
+                # Create a temporary series that maintains the type
+                temp_col = df[col].copy()
+                # Replace NaN with empty string (will convert column to object)
+                temp_col = temp_col.astype(str)
+                temp_col[nan_mask] = ''
+                df[col] = temp_col
+                nan_replaced_count += nan_mask.sum()
+    
     # Report the cleaning
     log_message(f"Cleaned whitespace from {sum(df.dtypes == 'object')} string columns")
+    log_message(f"Replaced {nan_replaced_count} NaN values with empty strings")
     return df
 
 def process_sm20(input_file, output_file):
-    """Process SM20 file with enhanced data preparation."""
+    """
+    Process SM20 security audit log file with enhanced data preparation.
+    
+    This function:
+    1. Reads the Excel SM20 export file
+    2. Converts column headers to UPPERCASE
+    3. Cleans whitespace and handles NaN values
+    4. Maps variant column names to standard names
+    5. Ensures all required columns exist (adding empty ones if needed)
+    6. Creates a datetime column from date and time fields
+    7. Sorts by user and datetime
+    8. Saves as CSV with UTF-8-sig encoding
+    
+    Args:
+        input_file (str): Path to the input SM20 Excel file
+        output_file (str): Path for the processed output CSV file
+        
+    Returns:
+        bool: True if processing succeeded, False otherwise
+    """
     try:
         # Read the Excel file
         log_message(f"Reading SM20 file: {input_file}")
@@ -106,9 +173,6 @@ def process_sm20(input_file, output_file):
         # Get original column count
         original_columns = df.columns.tolist()
         log_message(f"Original columns: {len(original_columns)}")
-        
-        # Store original column names for later mapping
-        original_col_names = df.columns.tolist()
         
         # Convert column headers to UPPERCASE
         df.columns = [col.strip().upper() for col in df.columns]
