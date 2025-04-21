@@ -6,7 +6,7 @@ This script combines SM20, CDHDR, and CDPOS logs into a user session timeline.
 It creates a unified, chronological view of SAP user activity for internal audit purposes.
 
 Key features:
-- Assigns session IDs based on user activity with a 60-minute timeout
+- Assigns session IDs based on user activity per calendar day (date-based sessions)
 - Preserves all relevant fields from each source
 - Joins CDHDR with CDPOS to show field-level changes
 - Creates a formatted Excel output with color-coding by source
@@ -80,14 +80,14 @@ def load_csv_file(file_path):
         log_message(f"Error loading {file_path}: {str(e)}", "ERROR")
         return pd.DataFrame()
 
-def assign_session_ids(df, user_col, time_col, session_timeout_minutes=60, session_col='Session ID'):
+def assign_session_ids(df, user_col, time_col, session_col='Session ID'):
     """
-    Assign session IDs to rows based on user and timestamp.
+    Assign session IDs to rows based on user and calendar date.
     A new session starts when:
     1. User changes, or
-    2. Time gap exceeds the session timeout
+    2. Date changes (calendar day boundary)
     
-    Sessions are numbered chronologically by their start time.
+    Sessions are numbered chronologically by their start date/time.
     """
     if len(df) == 0:
         return df
@@ -95,24 +95,28 @@ def assign_session_ids(df, user_col, time_col, session_timeout_minutes=60, sessi
     # Make a copy to avoid SettingWithCopyWarning
     df = df.sort_values(by=[user_col, time_col]).copy()
     
+    # Add a date column for session grouping
+    df['_session_date'] = df[time_col].dt.date
+    
     # First pass: identify session boundaries
     session_boundaries = []
     prev_user = None
-    prev_time = None
+    prev_date = None
     session_id = 0
     
     for idx, row in df.iterrows():
         user = row[user_col]
+        date = row['_session_date']
         dt = row[time_col]
         
-        # Start a new session if user changes or timeout exceeded
-        if user != prev_user or (prev_time and (dt - prev_time) > timedelta(minutes=session_timeout_minutes)):
+        # Start a new session if user changes or date changes
+        if user != prev_user or date != prev_date:
             session_id += 1
             # Store the session ID, start time, and index
             session_boundaries.append((session_id, dt, idx))
             
         prev_user = user
-        prev_time = dt
+        prev_date = date
     
     # Sort sessions by start time
     session_boundaries.sort(key=lambda x: x[1])
@@ -123,15 +127,15 @@ def assign_session_ids(df, user_col, time_col, session_timeout_minutes=60, sessi
     # Second pass: assign chronological session IDs
     session_ids = []
     prev_user = None
-    prev_time = None
+    prev_date = None
     current_session_id = 0
     
     for _, row in df.iterrows():
         user = row[user_col]
-        dt = row[time_col]
+        date = row['_session_date']
         
-        # Start a new session if user changes or timeout exceeded
-        if user != prev_user or (prev_time and (dt - prev_time) > timedelta(minutes=session_timeout_minutes)):
+        # Start a new session if user changes or date changes
+        if user != prev_user or date != prev_date:
             current_session_id += 1
             
         # Map to chronological session ID
@@ -139,7 +143,10 @@ def assign_session_ids(df, user_col, time_col, session_timeout_minutes=60, sessi
         session_ids.append(chronological_id)
         
         prev_user = user
-        prev_time = dt
+        prev_date = date
+    
+    # Clean up temporary column
+    df.drop('_session_date', axis=1, inplace=True)
 
     # Add session ID column
     df[session_col] = session_ids
@@ -216,7 +223,10 @@ def create_unified_timeline(sm20, cdhdr_cdpos):
     sm20_cols = [
         'Source', SM20_USER_COL, 'Datetime', 
         SM20_EVENT_COL, SM20_TCODE_COL, SM20_ABAP_SOURCE_COL, 
-        SM20_MSG_COL, SM20_NOTE_COL
+        SM20_MSG_COL, SM20_NOTE_COL,
+        # Variable fields needed for debug detection
+        'FIRST VARIABLE VALUE FOR EVENT', 'VARIABLE 2', 'VARIABLE 3',
+        'VARIABLE DATA FOR MESSAGE'
     ]
     
     cdhdr_cdpos_cols = [
@@ -252,7 +262,12 @@ def create_unified_timeline(sm20, cdhdr_cdpos):
             SM20_MSG_COL: 'Description',
             SM20_EVENT_COL: 'Event',
             SM20_ABAP_SOURCE_COL: 'ABAP_Source',
-            SM20_NOTE_COL: 'Note'
+            SM20_NOTE_COL: 'Note',
+            # Variable field standardized names for debug detection
+            'FIRST VARIABLE VALUE FOR EVENT': 'Variable_First',
+            'VARIABLE 2': 'Variable_2',
+            'VARIABLE 3': 'Variable_3',
+            'VARIABLE DATA FOR MESSAGE': 'Variable_Data'
         }
         
         # Only include keys that exist in the dataframe

@@ -24,20 +24,38 @@ import subprocess
 from datetime import datetime
 import pandas as pd
 
-# Import modules for risk assessment and output generation
+# Import modules for risk assessment, output generation, and analysis
 try:
-    from sap_audit_tool_risk_assessment import (
-        get_sensitive_tables, get_critical_field_patterns, get_sensitive_tcodes,
-        assess_risk_session, custom_field_risk_assessment, log_message
-    )
+    # Import from modular architecture
+    from sap_audit_utils import log_message
+    from sap_audit_tool_risk_assessment import assess_risk_session
     from sap_audit_tool_output import generate_excel_output
-    print("Using SAP Audit Risk Assessment module")
-except ImportError:
-    print("Error: Required modules not found. Please ensure sap_audit_tool_risk_assessment.py and sap_audit_tool_output.py are in the same directory.")
+    
+    # Import SysAid integration module
+    from sap_audit_sysaid import load_sysaid_data, merge_sysaid_data
+    
+    # Also import the reference data and detectors for advanced functionality
+    from sap_audit_reference_data import (
+        get_sensitive_tables, get_sensitive_tcodes, get_critical_field_patterns,
+        get_sap_event_code_classifications, get_sap_event_code_descriptions
+    )
+    from sap_audit_detectors import custom_field_risk_assessment
+    
+    # Import the new automated analyzer
+    try:
+        from sap_audit_analyzer import run_analysis_from_audit_tool
+        ANALYZER_AVAILABLE = True
+    except ImportError:
+        ANALYZER_AVAILABLE = False
+        log_message("Analyzer module not available. Skipping automated analysis.", "WARNING")
+    
+    print("Using SAP Audit Risk Assessment modular architecture v4.3.0")
+except ImportError as e:
+    print(f"Error: Required modules not found: {str(e)}. Please ensure all modular components are in the same directory.")
     sys.exit(1)
 
 # --- Configuration ---
-VERSION = "4.1.0"  # Updated for Field Description System enhancements (April 2025)
+VERSION = "4.3.0"  # Updated with Automated Analysis and Enhanced Debugging Detection (April 2025)
 
 # Get the script directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -221,7 +239,7 @@ def main():
             log_message(f"Error applying risk assessment to session timeline: {str(e)}", "ERROR")
             # Create empty risk columns to avoid errors later
             session_df.loc[:, "risk_level"] = "Unknown"
-            session_df.loc[:, "risk_factors"] = "Risk assessment failed"
+            session_df.loc[:, "risk_description"] = "Risk assessment failed: Analysis could not be completed on this data. [Technical: Risk assessment function encountered an error]"
         
         # Step 4: Generate Excel output with session data
         # Sort chronologically by session ID first, then by timestamp within session, then by risk level
@@ -243,8 +261,34 @@ def main():
         
         log_message("Sorting complete. Data ordered chronologically by session number.")
         
+        # Load and merge SysAid ticket information
+        log_message("Loading SysAid ticket information...")
+        sysaid_df = load_sysaid_data()
+        if sysaid_df is not None:
+            log_message(f"Loaded {len(sysaid_df)} SysAid tickets")
+            # Merge SysAid data with session data
+            session_df = merge_sysaid_data(session_df, sysaid_df)
+        else:
+            log_message("No SysAid data loaded. Proceeding without ticket information.", "WARNING")
+        
         # Generate Excel output with session data (empty dataframes for legacy mode)
         generate_excel_output(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), session_df, OUTPUT_FILE)
+        
+        # Step 5: Run automated analysis on the output file if analyzer is available
+        if 'ANALYZER_AVAILABLE' in globals() and ANALYZER_AVAILABLE:
+            log_message("Starting automated analysis of audit report...")
+            try:
+                analysis_success = run_analysis_from_audit_tool(OUTPUT_FILE)
+                if analysis_success:
+                    log_message("Automated analysis completed successfully")
+                else:
+                    log_message("Automated analysis failed or produced no significant results", "WARNING")
+            except Exception as e:
+                log_message(f"Error running automated analysis: {str(e)}", "ERROR")
+                import traceback
+                log_message(f"Analysis error details: {traceback.format_exc()}", "DEBUG")
+        else:
+            log_message("Skipping automated analysis (feature not available)", "INFO")
         
         # Calculate elapsed time
         elapsed_time = time.time() - start_time
