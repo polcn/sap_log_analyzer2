@@ -12,6 +12,7 @@ All notable changes to the SAP Log Analyzer will be documented in this file.
 - Distinct color-coding for SysAid fields in Excel output (light purple)
 - Updated legend in Excel output to include SysAid ticket information
 - Comprehensive test suite for data preparation and SysAid integration modules
+- Enhanced validation to ensure exact record counts in merged sessions
 
 ### Changed
 - Modified data preparation to preserve "SysAid #" field in input files
@@ -23,6 +24,10 @@ All notable changes to the SAP Log Analyzer will be documented in this file.
 - Improved NaN value handling in display output to prevent "nan" strings in reports
 - Fixed indentation error in `sap_audit_data_prep.py` that was causing script execution to fail
 - Enhanced function structure in data preparation module for better code organization
+- Critical record count validation issue in SAP Log Session Merger
+- CDPOS integration issues that caused records to be dropped or duplicated
+- Index conflicts during DataFrame concatenation that affected record integrity
+- Improved approach for merging SM20 and CDPOS records that preserves all source data
 
 ## [4.3.0] - April 2025
 

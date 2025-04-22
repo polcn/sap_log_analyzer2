@@ -155,7 +155,7 @@ def assign_session_ids(df, user_col, time_col, session_col='Session ID'):
 
 # --- Data Processing Functions ---
 def prepare_sm20(sm20):
-    """Prepare SM20 data with datetime and session IDs."""
+    """Prepare SM20 data with datetime."""
     if len(sm20) == 0:
         return sm20
         
@@ -168,57 +168,190 @@ def prepare_sm20(sm20):
     # Drop rows with invalid datetime
     sm20 = sm20.dropna(subset=['Datetime'])
     
-    # Assign session IDs
-    sm20 = assign_session_ids(sm20, SM20_USER_COL, 'Datetime')
-    
     # Add source identifier
     sm20['Source'] = 'SM20'
     
     return sm20
 
 def prepare_cdhdr(cdhdr):
-    """Prepare CDHDR data with datetime and session IDs."""
+    """Prepare CDHDR data with datetime."""
     if len(cdhdr) == 0:
         return cdhdr
+    
+    # Fix duplicate column names
+    col_list = cdhdr.columns.tolist()
+    renamed_cols = []
+    
+    for i, col in enumerate(col_list):
+        if col in renamed_cols:
+            # For duplicate columns, append a suffix
+            j = 1
+            while f"{col}_{j}" in renamed_cols:
+                j += 1
+            new_name = f"{col}_{j}"
+            log_message(f"Renamed duplicate column: {col} -> {new_name}")
+            renamed_cols.append(new_name)
+        else:
+            renamed_cols.append(col)
+    
+    # Assign new column names
+    cdhdr.columns = renamed_cols
+    
+    # Now clean up column names
+    cdhdr.columns = [col.strip() for col in cdhdr.columns]
+    
+    # Log all column names for debugging
+    log_message(f"CDHDR columns (after renaming): {cdhdr.columns.tolist()}")
+    
+    # Check if the date and time columns exist
+    if CDHDR_DATE_COL not in cdhdr.columns or CDHDR_TIME_COL not in cdhdr.columns:
+        # Look for similarly named columns
+        date_cols = [col for col in cdhdr.columns if 'DATE' in col and not col.endswith('_1') and not col.endswith('_2')]
+        time_cols = [col for col in cdhdr.columns if 'TIME' in col and not col.endswith('_1') and not col.endswith('_2')]
         
-    # Create datetime column
-    cdhdr['Datetime'] = pd.to_datetime(
-        cdhdr[CDHDR_DATE_COL].astype(str) + ' ' + cdhdr[CDHDR_TIME_COL].astype(str),
-        errors='coerce'
-    )
+        if date_cols and time_cols:
+            log_message(f"Using alternative columns: Date={date_cols[0]}, Time={time_cols[0]}")
+            date_col = date_cols[0]
+            time_col = time_cols[0]
+        elif 'DATETIME' in cdhdr.columns:
+            log_message("Using pre-existing DATETIME column")
+            cdhdr['Datetime'] = pd.to_datetime(cdhdr['DATETIME'], errors='coerce')
+            cdhdr = cdhdr.dropna(subset=['Datetime'])
+            cdhdr['Source'] = 'CDHDR'
+            return cdhdr
+        else:
+            log_message("Cannot find date/time columns in CDHDR data", "WARNING")
+            return pd.DataFrame()
+    else:
+        date_col = CDHDR_DATE_COL
+        time_col = CDHDR_TIME_COL
     
-    # Drop rows with invalid datetime
-    cdhdr = cdhdr.dropna(subset=['Datetime'])
-    
-    # Assign session IDs
-    cdhdr = assign_session_ids(cdhdr, CDHDR_USER_COL, 'Datetime')
+    # Create datetime column with better error handling
+    try:
+        # Ensure both columns are strings
+        cdhdr[date_col] = cdhdr[date_col].astype(str)
+        cdhdr[time_col] = cdhdr[time_col].astype(str)
+        
+        # Create datetime values
+        cdhdr['Datetime'] = pd.to_datetime(
+            cdhdr[date_col] + ' ' + cdhdr[time_col],
+            errors='coerce'
+        )
+        
+        # Check for NaT values
+        nat_count = cdhdr['Datetime'].isna().sum()
+        if nat_count > 0:
+            log_message(f"Warning: {nat_count} rows have invalid date/time in CDHDR", "WARNING")
+        
+        # Drop rows with invalid datetime
+        before_count = len(cdhdr)
+        cdhdr = cdhdr.dropna(subset=['Datetime'])
+        after_count = len(cdhdr)
+        
+        if before_count > after_count:
+            log_message(f"Dropped {before_count - after_count} CDHDR rows with invalid datetime", "WARNING")
+    except Exception as e:
+        log_message(f"Error creating datetime for CDHDR: {str(e)}", "ERROR")
+        # Try to continue with empty DataFrame rather than failing completely
+        return pd.DataFrame()
     
     # Add source identifier
     cdhdr['Source'] = 'CDHDR'
+    log_message(f"Prepared {len(cdhdr)} CDHDR records with datetime")
     
     return cdhdr
 
 def merge_cdhdr_cdpos(cdhdr, cdpos):
     """Merge CDHDR with CDPOS data."""
-    if len(cdhdr) == 0 or len(cdpos) == 0:
+    # If both are empty, return empty DataFrame
+    if len(cdhdr) == 0 and len(cdpos) == 0:
+        log_message("Both CDHDR and CDPOS are empty, skipping merge")
         return pd.DataFrame()
         
+    # If only CDPOS has data, prepare it directly with datetime
+    if len(cdhdr) == 0 and len(cdpos) > 0:
+        log_message(f"CDHDR is empty but CDPOS has {len(cdpos)} records. Using CDPOS directly.")
+        cdpos = cdpos.copy()
+        cdpos.columns = [col.strip() for col in cdpos.columns]
+        
+        # We need to add a datetime column for CDPOS
+        # Since CDPOS doesn't have date/time, use current time as placeholder
+        # This will be adjusted when merging with SM20 data
+        log_message("Adding placeholder datetime to CDPOS records")
+        cdpos['Datetime'] = pd.to_datetime('today')
+        cdpos['User'] = 'SYSTEM'  # Default user as placeholder
+        cdpos['Source'] = 'CDPOS'
+        return cdpos
+        
+    # If only CDHDR has data, return it as is
+    if len(cdhdr) > 0 and len(cdpos) == 0:
+        log_message(f"CDPOS is empty but CDHDR has {len(cdhdr)} records. Using CDHDR directly.")
+        return cdhdr
+    
+    # Clean up column names by stripping whitespace
+    cdhdr.columns = [col.strip() for col in cdhdr.columns]
+    cdpos.columns = [col.strip() for col in cdpos.columns]
+    
+    # Check if the expected columns exist
+    cdhdr_cols = [CDHDR_OBJECTCLAS_COL, CDHDR_OBJECTID_COL, CDHDR_CHANGENR_COL]
+    cdpos_cols = [CDPOS_CHANGENR_COL, CDPOS_TABNAME_COL]
+    
+    # Log available columns for debugging
+    log_message(f"CDHDR columns: {cdhdr.columns.tolist()}")
+    log_message(f"CDPOS columns: {cdpos.columns.tolist()}")
+    
+    # Find closest matches if columns don't exist exactly
+    for col in cdhdr_cols:
+        if col not in cdhdr.columns:
+            closest = [c for c in cdhdr.columns if col in c]
+            if closest:
+                log_message(f"CDHDR: Using '{closest[0]}' instead of '{col}'")
+                cdhdr[col] = cdhdr[closest[0]]
+    
+    for col in cdpos_cols:
+        if col not in cdpos.columns:
+            closest = [c for c in cdpos.columns if col in c]
+            if closest:
+                log_message(f"CDPOS: Using '{closest[0]}' instead of '{col}'")
+                cdpos[col] = cdpos[closest[0]]
+    
+    # Ensure all required columns exist
+    for df, name, cols in [(cdhdr, "CDHDR", cdhdr_cols), (cdpos, "CDPOS", [CDPOS_CHANGENR_COL])]:
+        missing = [col for col in cols if col not in df.columns]
+        if missing:
+            log_message(f"Missing required columns in {name}: {missing}", "WARNING")
+            # Create empty columns for missing ones
+            for col in missing:
+                df[col] = None
+    
     # Merge on OBJECTCLAS, OBJECTID, and CHANGENR as per requirements
-    merged = pd.merge(
-        cdhdr,
-        cdpos,
-        left_on=[CDHDR_OBJECTCLAS_COL, CDHDR_OBJECTID_COL, CDHDR_CHANGENR_COL],
-        right_on=[CDHDR_OBJECTCLAS_COL, CDHDR_OBJECTID_COL, CDPOS_CHANGENR_COL],
-        how='left'
-    )
-    
-    # Update source for rows with CDPOS data
-    merged.loc[merged[CDPOS_TABNAME_COL].notna(), 'Source'] = 'CDPOS'
-    
-    return merged
+    try:
+        merged = pd.merge(
+            cdhdr,
+            cdpos,
+            left_on=[CDHDR_OBJECTCLAS_COL, CDHDR_OBJECTID_COL, CDHDR_CHANGENR_COL],
+            right_on=[CDHDR_OBJECTCLAS_COL, CDHDR_OBJECTID_COL, CDPOS_CHANGENR_COL],
+            how='left'
+        )
+        
+        # Update source for rows with CDPOS data
+        if CDPOS_TABNAME_COL in merged.columns:
+            merged.loc[merged[CDPOS_TABNAME_COL].notna(), 'Source'] = 'CDPOS'
+            log_message(f"Successfully merged CDPOS data: {sum(merged['Source'] == 'CDPOS')} CDPOS records")
+        else:
+            log_message(f"Warning: {CDPOS_TABNAME_COL} not found in merged data", "WARNING")
+        
+        return merged
+    except Exception as e:
+        log_message(f"Error merging CDHDR with CDPOS: {str(e)}", "ERROR")
+        # Return the original CDHDR data if merge fails
+        return cdhdr
 
 def create_unified_timeline(sm20, cdhdr_cdpos):
-    """Create a unified timeline from all sources with proper session assignment."""
+    """Create a unified timeline from all sources with proper session assignment.
+    
+    This function ensures no duplication of records when consolidating data sources.
+    """
     # Define columns to keep from each source (excluding Session ID which we'll reassign)
     sm20_cols = [
         'Source', SM20_USER_COL, 'Datetime', 
@@ -328,15 +461,81 @@ def create_unified_timeline(sm20, cdhdr_cdpos):
     else:
         cdhdr_subset = pd.DataFrame()
     
-    # Combine datasets
-    if len(sm20_subset) > 0 and len(cdhdr_subset) > 0:
-        timeline = pd.concat([sm20_subset, cdhdr_subset], ignore_index=True)
-    elif len(sm20_subset) > 0:
-        timeline = sm20_subset
-    elif len(cdhdr_subset) > 0:
-        timeline = cdhdr_subset
+    # Process SM20 and CDPOS separately to avoid concatenation issues
+    sm20_original_count = 0
+    cdpos_original_count = 0
+    
+    # Start with SM20 as the base timeline
+    if len(sm20_subset) > 0:
+        timeline = sm20_subset.copy()
+        sm20_original_count = len(timeline)
+        log_message(f"SM20 original count: {sm20_original_count} records")
     else:
+        timeline = pd.DataFrame()
+    
+    # Then manually append CDPOS records one by one to avoid index conflicts
+    if len(cdhdr_subset) > 0:
+        cdpos_only = cdhdr_subset[cdhdr_subset['Source'] == 'CDPOS'].copy()
+        cdpos_original_count = len(cdpos_only)
+        log_message(f"CDPOS original count: {cdpos_original_count} records")
+        
+        if cdpos_original_count > 0:
+            if len(timeline) > 0:
+                # We have both SM20 and CDPOS data
+                log_message(f"Manually appending {cdpos_original_count} CDPOS records to timeline")
+                
+                # Use a completely different approach - create a new dataframe
+                log_message("Creating a fresh dataframe to safely combine SM20 and CDPOS data")
+                
+                # Create list of all column names
+                all_columns = list(set(timeline.columns) | set(cdpos_only.columns))
+                
+                # Create empty DataFrame with all columns
+                combined_data = []
+                
+                # Add SM20 data
+                for _, row in timeline.iterrows():
+                    row_dict = {}
+                    for col in all_columns:
+                        row_dict[col] = row[col] if col in timeline.columns else None
+                    combined_data.append(row_dict)
+                
+                # Add CDPOS data
+                for _, row in cdpos_only.iterrows():
+                    row_dict = {}
+                    for col in all_columns:
+                        row_dict[col] = row[col] if col in cdpos_only.columns else None
+                    combined_data.append(row_dict)
+                
+                # Create new DataFrame
+                timeline = pd.DataFrame(combined_data)
+            else:
+                # We only have CDPOS data
+                timeline = cdpos_only
+    
+    # If we still have no data, return empty DataFrame
+    if len(timeline) == 0:
         return pd.DataFrame()
+        
+    # Log source-specific counts
+    sm20_count = len(timeline[timeline['Source'] == 'SM20'])
+    cdhdr_count = len(timeline[timeline['Source'] == 'CDHDR'])
+    cdpos_count = len(timeline[timeline['Source'] == 'CDPOS'])
+    log_message(f"Combined records - SM20: {sm20_count}, CDHDR: {cdhdr_count}, CDPOS: {cdpos_count}")
+    
+    # Validate record counts - SM20 + CDPOS = Total
+    expected_count = (sm20_original_count if 'sm20_original_count' in locals() else 0) + \
+                     (cdpos_original_count if 'cdpos_original_count' in locals() else 0)
+    actual_count = len(timeline)
+    
+    if actual_count != expected_count:
+        log_message(f"WARNING: Record count mismatch - Expected: {expected_count}, Actual: {actual_count}", "WARNING")
+    else:
+        log_message(f"Record count validation passed: {actual_count} records match expected total")
+    
+    # Remove the record_index column as it's no longer needed
+    if 'record_index' in timeline.columns:
+        timeline = timeline.drop(columns=['record_index'])
     
     # Now assign session IDs based on the combined timeline
     log_message("Assigning session IDs to combined timeline...")

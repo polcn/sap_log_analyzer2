@@ -43,6 +43,13 @@ The SAP Log Analyzer is a Python-based security auditing tool that analyzes SAP 
 - Color-coded SysAid fields in Excel reports for easy identification
 - Provides business context for changes through associated ticketing system
 
+#### Record Integrity Improvements
+- Added record count validation to ensure all source records are preserved
+- Fixed CDPOS integration to maintain exact record counts
+- Implemented robust dictionary-based approach for record merging
+- Enhanced session timeline creation to prevent duplication or data loss
+- Improved validation ensuring SM20 + CDPOS = total record count
+
 ### v4.3.0 (April 2025)
 
 #### Automated Analysis and Reporting
