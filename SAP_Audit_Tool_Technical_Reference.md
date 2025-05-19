@@ -29,7 +29,35 @@ The SAP Audit Tool consists of several interconnected components designed to pro
 
 ## System Components
 
-### 1. Data Preparation (sap_audit_data_prep.py)
+### 1. SysAid Integration (sap_audit_sysaid.py)
+
+This component integrates SysAid helpdesk ticket data with SAP logs:
+
+- **Functions**:
+  - `load_sysaid_data()`: Loads SysAid ticket data from export files
+  - `merge_sysaid_with_sessions()`: Integrates ticket information with session timeline
+  - `format_sysaid_columns()`: Prepares SysAid data for Excel output formatting
+
+- **Input Format**: Excel or CSV files containing SysAid ticket exports with fields including:
+  - Ticket ID
+  - Title
+  - Description
+  - Request User
+  - Process Manager
+  - Status
+  - Request Time
+
+- **Integration Points**:
+  - SAP logs reference SysAid tickets via the "SysAid #" field
+  - Ticket information provides business context for SAP changes
+  - Color-coding in reports highlights SysAid-related information
+
+- **Output Impact**:
+  - Additional columns in session timeline for ticket information
+  - Business justification context for technical changes
+  - Enhanced audit trail with requestor information
+
+### 2. Data Preparation (sap_audit_data_prep.py)
 
 This module handles the initial processing of raw SAP export files:
 
@@ -55,7 +83,7 @@ This module handles the initial processing of raw SAP export files:
   - `CDHDR.csv` - Processed change document headers
   - `CDPOS.csv` - Processed change document items
 
-### 2. Session Merger (SAP Log Session Merger.py)
+### 3. Session Merger (SAP Log Session Merger.py)
 
 This component correlates events across different log types into a unified session timeline:
 
@@ -71,7 +99,7 @@ This component correlates events across different log types into a unified sessi
 
 - **Output**: Excel file `SAP_Session_Timeline.xlsx` containing the unified session timeline
 
-### 3. Risk Assessment (sap_audit_tool_risk_assessment.py)
+### 4. Risk Assessment (sap_audit_tool_risk_assessment.py)
 
 This module analyzes the session timeline to identify security risks:
 
@@ -97,7 +125,7 @@ This module analyzes the session timeline to identify security risks:
   - `assess_risk_session()`: Main function for risk assessment
   - `custom_field_risk_assessment()`: Assesses risk based on specific field changes
 
-### 4. Main Orchestration (sap_audit_tool.py)
+### 5. Main Orchestration (sap_audit_tool.py)
 
 This is the main entry point that coordinates the entire process:
 
@@ -114,7 +142,7 @@ This is the main entry point that coordinates the entire process:
   4. Apply risk assessment to session data
   5. Generate Excel output
 
-### 5. Report Generation (sap_audit_tool_output.py)
+### 6. Report Generation (sap_audit_tool_output.py)
 
 This component creates formatted Excel reports:
 
@@ -131,7 +159,7 @@ This component creates formatted Excel reports:
   - `apply_custom_headers()`: Formats worksheet headers based on data source
   - `generate_excel_output()`: Main function for Excel report generation
 
-### 6. Field Description System
+### 7. Field Description System
 
 This subsystem maintains and applies business-friendly descriptions to technical SAP field names:
 
@@ -152,6 +180,38 @@ This subsystem maintains and applies business-friendly descriptions to technical
     ```
 
 - **Integration**: Field descriptions are integrated into risk assessment and reporting to provide clear context for technical changes
+
+## Integration Architecture
+
+The system integrates various components through a well-defined data flow:
+
+```
+┌──────────────────┐     ┌────────────────────┐
+│                  │     │                    │
+│  SysAid Tickets  ├────►│  SysAid Integration│
+│                  │     │                    │
+└──────────────────┘     └─────────┬──────────┘
+                                   │
+                                   ▼
+┌──────────────────┐     ┌────────────────────┐     ┌──────────────────┐
+│                  │     │                    │     │                  │
+│  Raw SAP Exports ├────►│  Data Preparation  ├────►│  Session Merger  ├───┐
+│                  │     │                    │     │                  │   │
+└──────────────────┘     └────────────────────┘     └──────────────────┘   │
+                                                                           │
+                                                                           ▼
+┌──────────────────┐     ┌────────────────────┐     ┌──────────────────┐
+│                  │     │                    │     │                  │
+│  Excel Reports   │◄────┤  Report Generator  │◄────┤  Risk Assessment │
+│                  │     │                    │     │                  │
+└──────────────────┘     └────────────────────┘     └──────────────────┘
+```
+
+The SysAid integration enhances the standard data flow by:
+1. Providing business context for technical changes
+2. Linking helpdesk ticket information with SAP activities
+3. Enabling better audit trail through requestor identification
+4. Facilitating compliance verification with change management processes
 
 ## Risk Assessment Methodology
 
