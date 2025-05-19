@@ -61,7 +61,7 @@ CDPOS_VALUE_NEW_COL = 'NEW VALUE'
 CDPOS_VALUE_OLD_COL = 'OLD VALUE'
 
 # Fields to exclude (as per user request)
-EXCLUDE_FIELDS = ['SYSAID #', 'COMMENTS']
+EXCLUDE_FIELDS = ['COMMENTS']  # Removed 'SYSAID #' to preserve it through the process
 
 # --- Utility Functions ---
 def log_message(message, level="INFO"):
@@ -359,7 +359,9 @@ def create_unified_timeline(sm20, cdhdr_cdpos):
         SM20_MSG_COL, SM20_NOTE_COL,
         # Variable fields needed for debug detection
         'FIRST VARIABLE VALUE FOR EVENT', 'VARIABLE 2', 'VARIABLE 3',
-        'VARIABLE DATA FOR MESSAGE'
+        'VARIABLE DATA FOR MESSAGE',
+        # SysAid ticket reference field
+        'SYSAID#'
     ]
     
     cdhdr_cdpos_cols = [

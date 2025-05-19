@@ -40,7 +40,7 @@ SYSAID_PROCESS_MANAGER_COL = 'Process manager'
 SYSAID_REQUEST_TIME_COL = 'Request time'
 
 # Column that will link to SysAid in SAP logs
-SAP_SYSAID_COL = 'SYSAID #'
+SAP_SYSAID_COL = 'SYSAID#'
 
 # Column that will be added to session data
 SAP_SYSAID_COL_ADDED = 'SYSAID #'
@@ -179,20 +179,94 @@ def merge_sysaid_data(session_df, sysaid_df):
             log_message(f"Warning: Could not convert SysAid request times to datetime: {str(e)}", "WARNING")
             sysaid_df['request_time_dt'] = pd.NaT
         
-        # Build the lookup dictionary
+    # Build the lookup dictionary with enhanced normalization
+        log_message("Building SysAid lookup dictionary with enhanced normalization...")
+        
+        # Function to normalize ticket numbers - removes all non-numeric characters
+        def normalize_ticket(ticket_str):
+            """Aggressively normalize ticket numbers to match across different formats."""
+            if not ticket_str or pd.isna(ticket_str):
+                return ""
+                
+            # Convert to string if not already
+            ticket_str = str(ticket_str).strip()
+            
+            # First save the original format
+            original = ticket_str
+            
+            # Remove all non-digit characters (commas, #, spaces, etc.)
+            numeric_only = ''.join(c for c in ticket_str if c.isdigit())
+            
+            # Log the normalization for debugging
+            if numeric_only and numeric_only != original:
+                log_message(f"Normalized ticket: '{original}' -> '{numeric_only}'")
+                
+            return numeric_only
+        
+        # Sample of ticket formats for debugging
+        sample_tickets = []
+        
         for _, row in sysaid_df.iterrows():
-            # Convert ticket to string and normalize
-            ticket = str(row[SYSAID_TICKET_COL]).strip()
-            if ticket:
-                sysaid_lookup[ticket] = {
-                    SYSAID_TITLE_COL: row.get(SYSAID_TITLE_COL, ""),
-                    SYSAID_DESCRIPTION_COL: row.get(SYSAID_DESCRIPTION_COL, ""),
-                    SYSAID_NOTES_COL: row.get(SYSAID_NOTES_COL, ""),
-                    SYSAID_REQUEST_USER_COL: row.get(SYSAID_REQUEST_USER_COL, ""),
-                    SYSAID_PROCESS_MANAGER_COL: row.get(SYSAID_PROCESS_MANAGER_COL, ""),
-                    SYSAID_REQUEST_TIME_COL: row.get(SYSAID_REQUEST_TIME_COL, ""),
-                    "request_time_dt": row.get('request_time_dt', pd.NaT)
-                }
+            # Get and normalize the ticket
+            original_ticket = str(row[SYSAID_TICKET_COL]).strip() if pd.notna(row[SYSAID_TICKET_COL]) else ""
+            
+            # Skip empty tickets
+            if not original_ticket:
+                continue
+                
+            # Collect samples for debugging (up to 5)
+            if len(sample_tickets) < 5:
+                sample_tickets.append(original_ticket)
+            
+            # Normalize the ticket to numeric-only format
+            normalized_ticket = normalize_ticket(original_ticket)
+            
+            # Skip if no numeric content
+            if not normalized_ticket:
+                continue
+            
+            # Store ticket data
+            ticket_data = {
+                SYSAID_TITLE_COL: row.get(SYSAID_TITLE_COL, ""),
+                SYSAID_DESCRIPTION_COL: row.get(SYSAID_DESCRIPTION_COL, ""),
+                SYSAID_NOTES_COL: row.get(SYSAID_NOTES_COL, ""),
+                SYSAID_REQUEST_USER_COL: row.get(SYSAID_REQUEST_USER_COL, ""),
+                SYSAID_PROCESS_MANAGER_COL: row.get(SYSAID_PROCESS_MANAGER_COL, ""),
+                SYSAID_REQUEST_TIME_COL: row.get(SYSAID_REQUEST_TIME_COL, ""),
+                "request_time_dt": row.get('request_time_dt', pd.NaT),
+                "original_ticket": original_ticket  # Keep the original format for reference
+            }
+            
+            # Store with multiple variations of the ticket number to maximize matching success
+            
+            # 1. Store with normalized numeric-only value (most reliable for matching)
+            sysaid_lookup[normalized_ticket] = ticket_data
+            
+            # 2. Store with original format
+            sysaid_lookup[original_ticket] = ticket_data
+            
+            # 3. Store with # prefix if it doesn't already have one
+            if not original_ticket.startswith('#'):
+                sysaid_lookup[f"#{original_ticket}"] = ticket_data
+            
+            # 4. Store without # prefix if it has one
+            if original_ticket.startswith('#'):
+                sysaid_lookup[original_ticket[1:]] = ticket_data
+            
+            # 5. Store with commas if it's a large number without commas
+            if normalized_ticket.isdigit() and len(normalized_ticket) > 3:
+                try:
+                    # Format with commas for thousands separator (e.g., 123456 -> 123,456)
+                    formatted = '{:,}'.format(int(normalized_ticket))
+                    sysaid_lookup[formatted] = ticket_data
+                    
+                    # Also with # prefix
+                    sysaid_lookup[f"#{formatted}"] = ticket_data
+                except:
+                    pass
+        
+        if sample_tickets:
+            log_message(f"Sample SysAid ticket formats: {sample_tickets}")
         
         # Initialize SysAid fields in the result DataFrame
         result_df[SYSAID_TITLE_COL] = ""
@@ -203,34 +277,80 @@ def merge_sysaid_data(session_df, sysaid_df):
         result_df[SYSAID_PROCESS_MANAGER_COL] = ""
         result_df[SYSAID_REQUEST_TIME_COL] = ""
         
-        # Add all available tickets to the session data
-        # This simplistic approach just adds the first 5 tickets to the data
-        # In a real implementation, you would need more sophisticated logic to match tickets to sessions
-        if sysaid_lookup:
-            # Get the first few tickets
-            sample_tickets = list(sysaid_lookup.keys())[:5]
-            log_message(f"Adding sample tickets to session data: {sample_tickets}")
+        # Find any existing SysAid ticket numbers in the session data
+        ticket_count = 0
+        if sysaid_lookup and SAP_SYSAID_COL in result_df.columns:
+            log_message(f"Looking for SysAid ticket numbers in column: {SAP_SYSAID_COL}")
             
-            # Add the first ticket to every 20th row for demonstration
-            ticket_count = 0
-            for i, _ in result_df.iterrows():
-                if i % 20 == 0 and sample_tickets:
-                    # Get a ticket from the rotation
-                    ticket = sample_tickets[i % len(sample_tickets)]
-                    ticket_data = sysaid_lookup[ticket]
+            # Create a list of all available SysAid ticket numbers for debugging
+            available_tickets = list(sysaid_lookup.keys())
+            log_message(f"Available SysAid tickets in lookup: {len(available_tickets)} tickets")
+            if available_tickets:
+                log_message(f"Sample tickets: {available_tickets[:5]}")
+            
+            # Process each row in the session data using enhanced normalization
+            for i, row in result_df.iterrows():
+                # Get the SysAid ticket number from the row, if it exists
+                if SAP_SYSAID_COL in row and pd.notna(row[SAP_SYSAID_COL]) and str(row[SAP_SYSAID_COL]).strip():
+                    # Get the raw ticket number
+                    raw_ticket = str(row[SAP_SYSAID_COL]).strip()
                     
-                    # Add ticket reference
-                    result_df.at[i, SAP_SYSAID_COL_ADDED] = ticket
+                    # Normalize the ticket (aggressively strip all non-numeric characters)
+                    normalized_ticket = normalize_ticket(raw_ticket)
                     
-                    # Add ticket data
-                    result_df.at[i, SYSAID_TITLE_COL] = ticket_data[SYSAID_TITLE_COL]
-                    # Use the renamed SysAid Description column to avoid conflict with SAP Description column
-                    result_df.at[i, 'SysAid Description'] = ticket_data[SYSAID_DESCRIPTION_COL]
-                    result_df.at[i, SYSAID_NOTES_COL] = ticket_data[SYSAID_NOTES_COL]
-                    result_df.at[i, SYSAID_REQUEST_USER_COL] = ticket_data[SYSAID_REQUEST_USER_COL]
-                    result_df.at[i, SYSAID_PROCESS_MANAGER_COL] = ticket_data[SYSAID_PROCESS_MANAGER_COL]
-                    result_df.at[i, SYSAID_REQUEST_TIME_COL] = ticket_data[SYSAID_REQUEST_TIME_COL]
-                    ticket_count += 1
+                    # Log ticket information for debugging
+                    log_message(f"Found ticket reference in row {i}: {raw_ticket} (normalized: {normalized_ticket})")
+                    
+                    # Try different formats for lookup
+                    matched_ticket = False
+                    
+                    # Try different ticket formats for lookup
+                    ticket_formats = [
+                        normalized_ticket,                # Numeric only
+                        raw_ticket,                       # Original format
+                        raw_ticket.replace(',', ''),      # Without commas
+                        raw_ticket.lstrip('#'),           # Without leading #
+                        raw_ticket.replace(',', '').lstrip('#')  # Without commas or #
+                    ]
+                    
+                    # For debugging - show all formats we're trying
+                    log_message(f"Trying formats for lookup: {ticket_formats}")
+                    
+                    # Try each format
+                    for ticket_format in ticket_formats:
+                        if ticket_format in sysaid_lookup:
+                            log_message(f"✓ Match found using format: '{ticket_format}'")
+                            ticket_data = sysaid_lookup[ticket_format]
+                            matched_ticket = True
+                            break
+                    
+                    # If none of the formats matched, try one more approach - match by normalized numeric value only
+                    if not matched_ticket:
+                        # Look for any key in sysaid_lookup where normalize_ticket(key) == normalized_ticket
+                        for lookup_key, data in list(sysaid_lookup.items()):
+                            if normalize_ticket(lookup_key) == normalized_ticket:
+                                log_message(f"✓ Match found via normalized comparison: '{lookup_key}' -> '{normalized_ticket}'")
+                                ticket_data = data
+                                matched_ticket = True
+                                break
+                    
+                    # If we found a match with any format
+                    if matched_ticket:
+                        
+                        # Add ticket reference (normalized, without commas or #)
+                        result_df.at[i, SAP_SYSAID_COL_ADDED] = normalized_ticket
+                        
+                        # Add ticket data
+                        result_df.at[i, SYSAID_TITLE_COL] = ticket_data[SYSAID_TITLE_COL]
+                        # Use the renamed SysAid Description column to avoid conflict with SAP Description column
+                        result_df.at[i, 'SysAid Description'] = ticket_data[SYSAID_DESCRIPTION_COL]
+                        result_df.at[i, SYSAID_NOTES_COL] = ticket_data[SYSAID_NOTES_COL]
+                        result_df.at[i, SYSAID_REQUEST_USER_COL] = ticket_data[SYSAID_REQUEST_USER_COL]
+                        result_df.at[i, SYSAID_PROCESS_MANAGER_COL] = ticket_data[SYSAID_PROCESS_MANAGER_COL]
+                        result_df.at[i, SYSAID_REQUEST_TIME_COL] = ticket_data[SYSAID_REQUEST_TIME_COL]
+                        ticket_count += 1
+                    else:
+                        log_message(f"Ticket {raw_ticket} not found in SysAid data (normalized: {normalized_ticket})")
             
             log_message(f"Added SysAid ticket information to {ticket_count} rows in the session data")
             

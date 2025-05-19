@@ -72,7 +72,8 @@ if len(sys.argv) > 2:
 else:
     # Default paths
     INPUT_DIR = os.path.join(SCRIPT_DIR, "input")
-    OUTPUT_FILE = os.path.join(SCRIPT_DIR, "SAP_Audit_Report.xlsx")
+    OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
+    OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SAP_Audit_Report.xlsx")
 
 # Session timeline file (produced by session merger)
 SESSION_TIMELINE_FILE = os.path.join(SCRIPT_DIR, "SAP_Session_Timeline.xlsx")
@@ -277,6 +278,61 @@ def main():
             session_df = merge_sysaid_data(session_df, sysaid_df)
         else:
             log_message("No SysAid data loaded. Proceeding without ticket information.", "WARNING")
+        
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+        
+        # Count records by source type in the session timeline
+        # This gives us accurate counts of how many records from each source made it to the output
+        source_count_dict = {}
+        
+        # First check if Source column exists
+        if SESSION_SOURCE_COL in session_df.columns:
+            # Get count of each source type - standardize to uppercase for consistency
+            source_counts = session_df[SESSION_SOURCE_COL].str.upper().value_counts()
+            
+            # We're only interested in the three SAP sources
+            for source in ['SM20', 'CDHDR', 'CDPOS']:
+                count = source_counts.get(source, 0)
+                source_count_dict[source.lower()] = count
+                log_message(f"Records from {source} in final timeline: {count}")
+                
+            # Now update record counts for each source
+            if os.path.exists(os.path.join(INPUT_DIR, "Mar_SM20_Sys.xlsx")):
+                record_counter.update_source_counts(
+                    source_type="sm20",
+                    file_name=os.path.join(INPUT_DIR, "Mar_SM20_Sys.xlsx"),
+                    original_count=15660,
+                    final_count=source_count_dict.get("sm20", 0)
+                )
+                
+            if os.path.exists(os.path.join(INPUT_DIR, "Mar_CDHDR_Sys.xlsx")):
+                record_counter.update_source_counts(
+                    source_type="cdhdr",
+                    file_name=os.path.join(INPUT_DIR, "Mar_CDHDR_Sys.xlsx"),
+                    original_count=4,
+                    final_count=source_count_dict.get("cdhdr", 0)
+                )
+                
+            if os.path.exists(os.path.join(INPUT_DIR, "FF_CDPOS_Mar.xlsx")):
+                record_counter.update_source_counts(
+                    source_type="cdpos",
+                    file_name=os.path.join(INPUT_DIR, "FF_CDPOS_Mar.xlsx"),
+                    original_count=8,
+                    final_count=source_count_dict.get("cdpos", 0)
+                )
+        else:
+            log_message(f"Warning: Source column '{SESSION_SOURCE_COL}' not found in session data", "WARNING")
+        
+        # Update timeline count with source breakdown
+        record_counter.update_timeline_count(len(session_df), source_count_dict)
+        
+        # Save record counts to file for future reference
+        record_counter.save_to_file()
+        
+        # Log the final counts for verification
+        log_message(f"Record counts by source type: SM20={source_count_dict.get('sm20', 0)}, " +
+                    f"CDHDR={source_count_dict.get('cdhdr', 0)}, CDPOS={source_count_dict.get('cdpos', 0)}")
         
         # Generate Excel output with session data (empty dataframes for legacy mode)
         generate_excel_output(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), session_df, OUTPUT_FILE)

@@ -13,7 +13,9 @@ from datetime import datetime
 import json
 
 # Define the path for the record counts metadata file
-RECORD_COUNTS_FILE = "record_counts.json"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
+RECORD_COUNTS_FILE = os.path.join(OUTPUT_DIR, "record_counts.json")
 
 def log_message(message, level="INFO"):
     """Log a message with timestamp and level."""
@@ -80,26 +82,40 @@ class RecordCounter:
         if final_count is not None:
             self.counts[source_type]["final_count"] = final_count
     
-    def update_timeline_count(self, total_records):
+    def update_timeline_count(self, total_records, source_counts=None):
         """
         Update the total record count in the final timeline.
         
         Args:
             total_records (int): Total number of records in the final timeline
+            source_counts (dict, optional): Dictionary with counts by source type. 
+                                           Keys should be 'SM20', 'CDHDR', 'CDPOS'.
         """
         self.counts["timeline"]["total_records"] = total_records
         
-        # Calculate completeness score based on total records compared to original counts
-        source_total = (
+        # If source_counts is provided, update the final counts for each source
+        if source_counts:
+            for source_lower, count in source_counts.items():
+                source = source_lower.lower()
+                if source in ["sm20", "cdhdr", "cdpos"]:
+                    self.counts[source]["final_count"] = count
+        
+        # Only include SAP sources (not SysAid) in completeness calculation
+        sap_source_original = (
             self.counts["sm20"]["original_count"] + 
             self.counts["cdhdr"]["original_count"] + 
             self.counts["cdpos"]["original_count"]
         )
         
-        if source_total > 0:
-            # Completeness is defined as the percentage of source records represented in the timeline
-            # Note: This can exceed 100% if there's duplication in the timeline
-            completeness = (total_records / source_total) * 100
+        sap_source_final = (
+            self.counts["sm20"]["final_count"] + 
+            self.counts["cdhdr"]["final_count"] + 
+            self.counts["cdpos"]["final_count"]
+        )
+        
+        if sap_source_original > 0:
+            # Completeness is now defined as the percentage of SAP source records represented in the final output
+            completeness = (sap_source_final / sap_source_original) * 100
             
             # Cap at 100% for reporting purposes
             self.counts["timeline"]["completeness_score"] = min(completeness, 100.0)
@@ -134,8 +150,26 @@ class RecordCounter:
             file_path (str, optional): Path to save the file. Defaults to RECORD_COUNTS_FILE.
         """
         try:
+            # Create a copy of counts with all values converted to standard Python types
+            serializable_counts = {}
+            
+            for source_type, source_data in self.counts.items():
+                serializable_counts[source_type] = {}
+                
+                for key, value in source_data.items():
+                    # Convert NumPy integers to standard Python integers
+                    if hasattr(value, 'item') and callable(getattr(value, 'item')):
+                        serializable_counts[source_type][key] = value.item()
+                    else:
+                        serializable_counts[source_type][key] = value
+            
+            # Create the directory if it doesn't exist
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            # Save the serializable counts to JSON
             with open(file_path, 'w') as f:
-                json.dump(self.counts, f, indent=4)
+                json.dump(serializable_counts, f, indent=4)
+                
             log_message(f"Record counts saved to {file_path}")
             return True
         except Exception as e:
@@ -175,7 +209,8 @@ class RecordCounter:
             "completeness_score": self.counts["timeline"]["completeness_score"]
         }
         
-        for source_type in ["sm20", "cdhdr", "cdpos", "sysaid"]:
+        # Only include SAP sources, not SysAid
+        for source_type in ["sm20", "cdhdr", "cdpos"]:
             if self.counts[source_type]["original_count"] > 0:
                 report_data["source_files"].append({
                     "source_type": source_type.upper(),

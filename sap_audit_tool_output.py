@@ -94,7 +94,8 @@ SESSION_ESSENTIAL_COLUMNS = [
     'sap_risk_level',        # SAP's native risk classification
     'risk_description',      # Explanation of risk assessment (renamed from risk_factors)
     # SysAid ticket fields - grouped together after risk description
-    'SYSAID #',              # SysAid ticket number reference
+    'SYSAID#',               # SysAid ticket number from SM20 source data
+    'SYSAID #',              # SysAid ticket number reference (after processing)
     'Title',                 # SysAid ticket title
     'SysAid Description',    # SysAid ticket description (renamed to avoid column name conflict)
     'Notes',                 # SysAid ticket notes
@@ -147,13 +148,14 @@ def apply_custom_headers(worksheet, df, wb):
         'Object_ID': 'CDHDR',
         'Doc_Number': 'CDHDR',
         # SysAid ticket fields
-        'SYSAID #': 'SysAid',
-        'Title': 'SysAid',
-        'SysAid Description': 'SysAid',  # Only use the new renamed column for SysAid description
-        'Notes': 'SysAid',
-        'Request user': 'SysAid',
-        'Process manager': 'SysAid',
-        'Request time': 'SysAid',
+        'SYSAID#': 'SysAid',               # Original SysAid ticket reference from SM20
+        'SYSAID #': 'SysAid',               # Processed SysAid ticket reference
+        'Title': 'SysAid',                  # SysAid ticket title
+        'SysAid Description': 'SysAid',     # SysAid ticket description (renamed to avoid conflicts)
+        'Notes': 'SysAid',                  # SysAid ticket notes
+        'Request user': 'SysAid',           # SysAid ticket requester
+        'Process manager': 'SysAid',        # SysAid ticket manager
+        'Request time': 'SysAid',           # SysAid ticket request time
         # Additional fields for expanded SysAid integration
         'SysAid Title': 'SysAid',
         'SysAid Notes': 'SysAid',
@@ -274,8 +276,24 @@ def generate_excel_output(correlated_df, unmatched_cdpos, unmatched_sm20, sessio
         
         # Filter session dataframe if it exists
         if session_df is not None and len(session_df) > 0:
-            session_cols = [col for col in SESSION_ESSENTIAL_COLUMNS if col in session_df.columns]
-            session_filtered = clean_df(session_df[session_cols].copy())
+            # Create a copy of the session_df
+            session_filtered = session_df.copy()
+            
+            # Add missing SysAid columns if they don't exist
+            sysaid_columns = [
+                'SYSAID#', 'SYSAID #', 'Title', 'SysAid Description', 
+                'Notes', 'Request user', 'Process manager', 'Request time'
+            ]
+            
+            # Add any missing columns with empty values
+            for col in sysaid_columns:
+                if col not in session_filtered.columns:
+                    session_filtered[col] = ""
+                    log_message(f"Added missing SysAid column: {col}")
+            
+            # Now filter to include only essential columns that exist
+            session_cols = [col for col in SESSION_ESSENTIAL_COLUMNS if col in session_filtered.columns]
+            session_filtered = clean_df(session_filtered[session_cols])
         else:
             session_filtered = pd.DataFrame(columns=SESSION_ESSENTIAL_COLUMNS)
 

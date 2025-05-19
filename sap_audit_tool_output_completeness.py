@@ -14,7 +14,7 @@ def log_message(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {level}: {message}")
 
-def add_data_completeness_section(workbook, worksheet, record_counter, row_offset=10):
+def add_data_completeness_section(workbook, worksheet, record_counter, row_offset=35):
     """
     Add a data completeness section to the summary worksheet.
     
@@ -70,8 +70,8 @@ def add_data_completeness_section(workbook, worksheet, record_counter, row_offse
     worksheet.write(current_row, 4, "Inclusion Rate", subheader_format)
     current_row += 1
     
-    # Add data for each source type
-    for source_type in ["sm20", "cdhdr", "cdpos", "sysaid"]:
+    # Add data for each source type - excluding SysAid as requested
+    for source_type in ["sm20", "cdhdr", "cdpos"]:
         source_data = record_counter.counts[source_type]
         if source_data["original_count"] > 0:
             # Calculate inclusion rate
@@ -85,9 +85,9 @@ def add_data_completeness_section(workbook, worksheet, record_counter, row_offse
             worksheet.write(current_row, 4, inclusion_rate, percent_format)
             current_row += 1
     
-    # Add total row
+    # Add total row - Sum of SAP sources only (no SysAid)
     total_original = sum(record_counter.counts[src]["original_count"] for src in ["sm20", "cdhdr", "cdpos"])
-    total_final = record_counter.counts["timeline"]["total_records"]
+    total_final = sum(record_counter.counts[src]["final_count"] for src in ["sm20", "cdhdr", "cdpos"])
     total_rate = total_final / total_original if total_original > 0 else 0
     
     worksheet.write(current_row, 0, "TOTAL", subheader_format)
