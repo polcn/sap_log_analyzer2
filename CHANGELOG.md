@@ -2,6 +2,38 @@
 
 All notable changes to the SAP Log Analyzer will be documented in this file.
 
+## [4.5.0] - May 2025
+
+### Added
+- New `OutputGenerator` class with Template Method pattern for different report formats
+- Centralized `AuditController` class to orchestrate the entire audit workflow
+- Pipeline architecture connecting all refactored modules
+- Command-line interface with argument parsing for flexible usage
+- Support for multiple output formats (Excel primary, with CSV option)
+- Comprehensive validation between processing steps
+- Progress tracking and reporting throughout the audit process
+- Visualization capabilities for risk statistics
+- Configuration validation at startup
+- Support for different operating modes (full audit, data prep only, etc.)
+
+### Changed
+- Replaced hardcoded formatting with configuration-based templating
+- Refactored SysAid integration with Strategy pattern for data sources
+- Enhanced SysAid caching for performance optimization
+- Improved error handling with retry mechanisms for API calls
+- Made SysAid integration optional through configuration
+- Updated main tool to use the new controller architecture
+- Standardized error handling across all modules
+- Enhanced command-line help documentation
+
+### Fixed
+- Fixed permissions issue with OneDrive synchronized files
+- Improved error handling for locked files
+- Enhanced data validation between processing steps
+- Fixed SysAid column mapping issues
+- Standardized error handling and logging
+- Resolved issues with test data processing
+
 ## [4.4.0] - April 2025
 
 ### Added
