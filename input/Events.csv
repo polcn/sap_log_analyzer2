@@ -1,0 +1,26 @@
+Event Code,Event Code Description
+AU1,Logon successful
+AU2,Logon failed
+AU3,Transaction start
+AUC,Client (GUI) terminated
+AUE,Logoff
+AU6,Session manager start
+AU8,RFC logon successful
+AUG,Transaction/report start
+BU,Record creation
+BC,Field modification
+BW,Record modification
+BD,Record deletion
+EU1,Import transport request
+EU2,Release transport request
+EU3,TMS configuration changes
+EU4,Approve or reject request
+CL,Client copy source client
+CT,Client copy target client
+DB,Debugger: Program stopped
+DB1,Debugger: Breakpoint reached
+DB2,Debugger: Watchpoint hit
+DB3,Debugger: Step into/over
+DBC,Debugger: Program continued
+DBG,Debugger: Started
+DBI,Debugger: Single step

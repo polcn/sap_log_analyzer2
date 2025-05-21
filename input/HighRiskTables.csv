@@ -1,0 +1,33 @@
+Table,Category,Description
+USR02,Security,User Password Data
+USR10,Security,User Authorization Profiles
+USR11,Security,User Address
+USR12,Security,User Authorization Values
+USR21,Security,User Parameters
+AGR_1016,Security,Authorization Object Profiles
+AGR_DEFINE,Security,Authorization Groups
+AGR_USERS,Security,User Role Assignment
+USGRP,Security,User Groups
+USGRPT,Security,User Group Texts
+UST12,Security,User Authorization Profiles for Transaction Codes
+DEVACCESS,Security,Development System Access Authorizations
+TOBJ,Security,Authorization Object Definitions
+TOBCT,Security,Authorization Object Field Texts
+TBRG,Security,Transaction Authorization Groups
+TSTC,Configuration,Transaction Codes
+TSTCT,Configuration,Transaction Code Texts
+TDEVC,Configuration,Development Classes (Packages)
+TBDLS,Configuration,Table Field Display Settings
+TADIR,Development,Repository Object Directory
+TRDIR,Development,Program Metadata
+SEOCLASS,Development,Class Definitions
+SEOBJECT,Development,Object Definitions
+TFDIR,Development,Function Module Directory
+DD02L,Tables,Table Definitions
+DD02T,Tables,Table Texts
+DD03L,Tables,Table Fields
+DD08L,Tables,Foreign Key Definitions
+ENLFDIR,Transport,Transport Layer Definitions
+E070,Transport,Transport Requests
+E071,Transport,Transport Request Objects
+E071K,Transport,Transport Request Components

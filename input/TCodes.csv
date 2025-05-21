@@ -1,0 +1,68 @@
+TCode,TCode Description
+SM30,Table Maintenance
+SM31,Extended Table Maintenance
+SM34,View Maintenance
+SE16,Data Browser
+SE16N,Enhanced Data Browser
+SM32,Table Maintenance (Call Transaction)
+SE11,ABAP Dictionary Maintenance
+SE13,Table/View Maintenance 
+SE38,ABAP Editor
+STMS,Transport Management System
+SE80,Object Navigator
+SE01,Transport Organizer
+SE09,Transport Management
+SE10,Transport Organizer Tools
+SE03,Transport Management System
+SE24,Class Builder
+SE37,Function Builder
+/H,Debug Mode
+ABAPDBG,ABAP Debugger
+SU01,User Maintenance
+SU10,Mass User Maintenance
+PFCG,Role Maintenance
+SM19,Security Audit Configuration 
+SM20,Security Audit Log Display
+SU53,Authorization Check
+SU21,Authorization Objects
+SU22,Authorization Default Values
+SU25,Upgrade Authorization Test
+SU56,Authorization Trace
+SUIM,User Information System
+SM12,Lock Entries
+SM21,System Log
+ST22,ABAP Dump Analysis
+SE37,ABAP Function Builder
+AL11,SAP Directories
+AL08,User List
+FB01,Post Document
+FB02,Change Document
+FB03,Display Document
+FI01,Create Asset
+FI02,Change Asset
+FI03,Display Asset
+FK01,Create Vendor
+FK02,Change Vendor
+FK03,Display Vendor
+FD01,Create Customer
+FD02,Change Customer
+FD03,Display Customer
+MM01,Create Material
+MM02,Change Material
+MM03,Display Material
+ME21,Create Purchase Order
+ME22,Change Purchase Order
+ME23,Display Purchase Order
+VA01,Create Sales Order
+VA02,Change Sales Order
+VA03,Display Sales Order
+VL01,Create Delivery
+VL02,Change Delivery
+VL03,Display Delivery
+MB01,Goods Receipt for PO
+MB0A,Goods Issue
+MB1A,Goods Receipt
+MB1B,Transfer Posting
+MB1C,Other Goods Receipt
+MB5B,Stock List
+MIGO,Goods Movement

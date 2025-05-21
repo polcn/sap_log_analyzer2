@@ -2,378 +2,190 @@
 """
 SAP Audit Tool - Main Script
 
-This script ties together the modular components of the SAP Audit Tool:
-1. Checks if session timeline exists
-2. If not, calls SAP Log Session Merger functionality
-3. Applies risk assessment
-4. Generates output
+This script provides the main entry point for the SAP Audit Tool.
+It uses the AuditController to orchestrate all processing steps
+of the SAP Audit workflow.
 
 Usage:
-  python sap_audit_tool.py [input_dir] [output_file]
+  python sap_audit_tool.py [options]
 
-Dependencies:
-  - sap_audit_tool_risk_assessment.py
-  - sap_audit_tool_output.py
-  - SAP Log Session Merger.py (functionality)
+Options:
+  --mode MODE          Processing mode: full, prep, merge, existing
+  --timeline FILE      Timeline file for 'existing' mode
+  --output FILE        Override output file path
+  --format FORMAT      Output format: excel, csv
+  --sysaid STRATEGY    SysAid strategy: file, api
+
+Examples:
+  python sap_audit_tool.py                    # Run full audit process
+  python sap_audit_tool.py --mode prep        # Run only data preparation
+  python sap_audit_tool.py --mode merge       # Run data preparation and session merging
+  python sap_audit_tool.py --mode existing    # Process from existing timeline file
+                      --timeline FILE.xlsx
+  python sap_audit_tool.py --format csv       # Generate CSV output
 """
 
 import sys
 import os
 import time
-import subprocess
+import argparse
 from datetime import datetime
-import pandas as pd
 
-# Import modules for risk assessment, output generation, and analysis
+# Import configurations
 try:
-    # Import from modular architecture
-    from sap_audit_utils import log_message
-    from sap_audit_tool_risk_assessment import assess_risk_session
-    from sap_audit_tool_output import generate_excel_output
-    
-    # Import SysAid integration module
-    from sap_audit_sysaid import load_sysaid_data, merge_sysaid_data
-    
-    # Import record counter for completeness tracking
-    from sap_audit_record_counts import record_counter
-    
-    # Also import the reference data and detectors for advanced functionality
-    from sap_audit_reference_data import (
-        get_sensitive_tables, get_sensitive_tcodes, get_critical_field_patterns,
-        get_sap_event_code_classifications, get_sap_event_code_descriptions
-    )
-    from sap_audit_detectors import custom_field_risk_assessment
-    
-    # Import the new automated analyzer
-    try:
-        from sap_audit_analyzer import run_analysis_from_audit_tool
-        ANALYZER_AVAILABLE = True
-    except ImportError:
-        ANALYZER_AVAILABLE = False
-        log_message("Analyzer module not available. Skipping automated analysis.", "WARNING")
-    
-    print("Using SAP Audit Risk Assessment modular architecture v4.4.0")
+    from sap_audit_config import PATHS, SETTINGS
+    from sap_audit_utils import log_message, log_section, log_error, handle_exception
 except ImportError as e:
-    print(f"Error: Required modules not found: {str(e)}. Please ensure all modular components are in the same directory.")
+    print(f"ERROR: Required modules not found: {e}")
+    print("Please ensure all core configuration modules are available.")
     sys.exit(1)
 
-# --- Configuration ---
-VERSION = "4.4.0"  # Updated with SysAid Integration, Improved Field Handling, and Enhanced Debugging Detection (April 2025)
+# Import controller (which will import all required components)
+try:
+    from sap_audit_controller import AuditController
+except ImportError as e:
+    print(f"ERROR: Cannot import AuditController: {e}")
+    print("The SAP Audit Controller module is required to run this tool.")
+    sys.exit(1)
 
-# Get the script directory
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-print(f"Script directory: {SCRIPT_DIR}")
-print(f"Current working directory: {os.getcwd()}")
+# Constants
+MODES = {
+    "full": "Run full audit process",
+    "prep": "Data preparation only",
+    "merge": "Data preparation and session merging only",
+    "existing": "Process from existing timeline file",
+}
 
-# File paths - can be overridden via command line arguments
-if len(sys.argv) > 2:
-    INPUT_DIR = sys.argv[1]
-    OUTPUT_FILE = sys.argv[2]
-else:
-    # Default paths
-    INPUT_DIR = os.path.join(SCRIPT_DIR, "input")
-    OUTPUT_DIR = os.path.join(SCRIPT_DIR, "output")
-    OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SAP_Audit_Report.xlsx")
+OUTPUT_FORMATS = ["excel", "csv"]
+SYSAID_STRATEGIES = ["file", "api"]
 
-# Session timeline file (produced by session merger)
-SESSION_TIMELINE_FILE = os.path.join(SCRIPT_DIR, "SAP_Session_Timeline.xlsx")
 
-# Session Timeline columns (from SAP Log Session Merger)
-SESSION_ID_COL = 'Session ID'
-SESSION_ID_WITH_DATE_COL = 'Session ID with Date'
-SESSION_USER_COL = 'User'
-SESSION_DATETIME_COL = 'Datetime'
-SESSION_SOURCE_COL = 'Source'
-SESSION_TCODE_COL = 'TCode'
-SESSION_TABLE_COL = 'Table'
-SESSION_FIELD_COL = 'Field'
-SESSION_CHANGE_IND_COL = 'Change_Indicator'
-SESSION_OLD_VALUE_COL = 'Old_Value'
-SESSION_NEW_VALUE_COL = 'New_Value'
-SESSION_DESCRIPTION_COL = 'Description'
-SESSION_OBJECT_COL = 'Object'
-SESSION_OBJECT_ID_COL = 'Object_ID'
-SESSION_DOC_NUMBER_COL = 'Doc_Number'
-
-def load_session_timeline():
-    """
-    Load the session timeline Excel file produced by the SAP Log Session Merger.
-    Returns the DataFrame if successful, None otherwise.
-    """
-    try:
-        # Check if the session timeline file exists
-        if not os.path.exists(SESSION_TIMELINE_FILE):
-            log_message(f"Session timeline file not found: {SESSION_TIMELINE_FILE}", "WARNING")
-            return None
-            
-        log_message(f"Loading session timeline from: {SESSION_TIMELINE_FILE}")
-        
-        # Load the Excel file
-        timeline_df = pd.read_excel(SESSION_TIMELINE_FILE, sheet_name="Session_Timeline")
-        
-        # Verify required columns
-        required_cols = [SESSION_ID_WITH_DATE_COL, SESSION_USER_COL, SESSION_DATETIME_COL, SESSION_SOURCE_COL]
-        missing_cols = [col for col in required_cols if col not in timeline_df.columns]
-        
-        if missing_cols:
-            log_message(f"Missing required columns in session timeline: {', '.join(missing_cols)}", "WARNING")
-            return None
-            
-        log_message(f"Loaded session timeline with {len(timeline_df)} records")
-        return timeline_df
-        
-    except Exception as e:
-        log_message(f"Error loading session timeline: {str(e)}", "ERROR")
-        return None
-
-def prepare_session_data(timeline_df):
-    """
-    Prepare the session timeline data for risk assessment.
-    Adds necessary columns and flags for analysis.
-    """
-    log_message("Preparing session timeline data for analysis...")
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="SAP Audit Tool")
     
-    try:
-        # Create a copy to avoid SettingWithCopyWarning
-        df = timeline_df.copy()
-        
-        # Ensure datetime column is datetime type
-        if SESSION_DATETIME_COL in df.columns:
-            df[SESSION_DATETIME_COL] = pd.to_datetime(df[SESSION_DATETIME_COL], errors='coerce')
-            
-        # Add a column to identify display-only activities (for SM20 entries)
-        if SESSION_DESCRIPTION_COL in df.columns:
-            df['is_display_only'] = df[SESSION_DESCRIPTION_COL].str.contains(
-                r'DISPLAY|READ|VIEW|SHOW|REPORT|LIST',
-                case=False,
-                regex=True
-            )
-        else:
-            df['is_display_only'] = False
-            
-        # Add a column to identify actual changes (for CDPOS entries)
-        if SESSION_CHANGE_IND_COL in df.columns:
-            df['is_actual_change'] = df[SESSION_CHANGE_IND_COL].isin(['I', 'U', 'D'])
-        else:
-            df['is_actual_change'] = False
-            
-        # Identify special case: SM20 shows display but CDPOS indicates changes
-        if 'is_display_only' in df.columns and 'is_actual_change' in df.columns:
-            df['display_but_changed'] = df['is_display_only'] & df['is_actual_change']
-        else:
-            df['display_but_changed'] = False
-            
-        log_message(f"Session timeline data prepared. {len(df)} entries.")
-        return df
-        
-    except Exception as e:
-        log_message(f"Error preparing session timeline data: {str(e)}", "ERROR")
-        return timeline_df
+    parser.add_argument("--mode", choices=list(MODES.keys()), default="full",
+                        help=f"Processing mode: {', '.join(MODES.keys())}")
+    parser.add_argument("--timeline", 
+                        help="Timeline file for 'existing' mode")
+    parser.add_argument("--output", 
+                        help="Override output file path")
+    parser.add_argument("--format", choices=OUTPUT_FORMATS, default="excel",
+                        help=f"Output format: {', '.join(OUTPUT_FORMATS)}")
+    parser.add_argument("--sysaid", choices=SYSAID_STRATEGIES, default="file",
+                        help=f"SysAid data strategy: {', '.join(SYSAID_STRATEGIES)}")
+    
+    return parser.parse_args()
 
-def run_session_merger():
-    """Run the SAP Log Session Merger script to create a session timeline."""
-    log_message("Running SAP Log Session Merger...")
-    
-    try:
-        # Check if the merger script exists
-        merger_script = os.path.join(SCRIPT_DIR, "SAP Log Session Merger.py")
-        if not os.path.exists(merger_script):
-            log_message(f"Session merger script not found: {merger_script}", "ERROR")
-            return False
-        
-        # Run the merger script
-        result = subprocess.run(
-            [sys.executable, merger_script],
-            capture_output=True,
-            text=True
-        )
-        
-        # Check if the script ran successfully
-        if result.returncode == 0:
-            log_message("Session merger completed successfully")
-            
-            # Check if the output file was created
-            if os.path.exists(SESSION_TIMELINE_FILE):
-                log_message(f"Session timeline created: {SESSION_TIMELINE_FILE}")
-                return True
-            else:
-                log_message("Session merger did not create a timeline file", "WARNING")
-                return False
-        else:
-            log_message(f"Session merger failed with error: {result.stderr}", "ERROR")
-            return False
-    
-    except Exception as e:
-        log_message(f"Error running session merger: {str(e)}", "ERROR")
-        return False
 
-# --- Main Function ---
-def main():
-    """Main function to execute the SAP audit analysis."""
-    start_time = time.time()
-    log_message(f"Starting SAP Audit Tool v{VERSION}...")
+def create_config_from_args(args):
+    """Create configuration dictionary from command line arguments."""
+    config = {}
     
-    try:
-        # Step 1: Check if session timeline file exists
-        session_df = load_session_timeline()
-        
-        # If session timeline doesn't exist, run the session merger
-        if session_df is None:
-            log_message("No session timeline found. Running session merger...")
-            if run_session_merger():
-                # Try loading the session timeline again
-                session_df = load_session_timeline()
-            else:
-                log_message("Failed to create session timeline. Exiting.", "ERROR")
-                return False
-        
-        # If we still don't have a session timeline, exit
-        if session_df is None:
-            log_message("No session timeline available. Exiting.", "ERROR")
-            return False
-        
-        # Step 2: Prepare session data
-        session_df = prepare_session_data(session_df)
-        
-        # Step 3: Apply risk assessment to session data
-        log_message("Applying risk assessment to session timeline...")
-        try:
-            session_df = assess_risk_session(session_df)
-        except Exception as e:
-            log_message(f"Error applying risk assessment to session timeline: {str(e)}", "ERROR")
-            # Create empty risk columns to avoid errors later
-            session_df.loc[:, "risk_level"] = "Unknown"
-            session_df.loc[:, "risk_description"] = "Risk assessment failed: Analysis could not be completed on this data. [Technical: Risk assessment function encountered an error]"
-        
-        # Step 4: Update timeline record count for completeness tracking
-        log_message("Updating record counts for completeness tracking...")
-        record_counter.update_timeline_count(len(session_df))
-        
-        # Step 5: Generate Excel output with session data
-        # Sort chronologically by session ID first, then by timestamp within session, then by risk level
-        # Extract the numeric part of session IDs for proper numerical sorting
-        log_message("Preparing chronological sorting...")
-        
-        # Extract Session IDs from "Session ID with Date" format (e.g., "S0001 (2025-04-10)")
-        session_df['Session_ID_Numeric'] = session_df[SESSION_ID_WITH_DATE_COL].str.extract(r'S(\d+)').astype(int)
-        
-        # Create a risk level sort key (High=0, Medium=1, Low=2, Unknown=3)
-        session_df['Risk_Sort'] = session_df['risk_level'].map({'High': 0, 'Medium': 1, 'Low': 2, 'Unknown': 3})
-        
-        # Sort by numerical session ID, then by timestamp within session, then by risk level
-        session_df = session_df.sort_values(['Session_ID_Numeric', SESSION_DATETIME_COL, 'Risk_Sort'], 
-                                           ascending=[True, True, True])
-        
-        # Drop the temporary columns used for sorting
-        session_df = session_df.drop(['Session_ID_Numeric', 'Risk_Sort'], axis=1)
-        
-        log_message("Sorting complete. Data ordered chronologically by session number.")
-        
-        # Load and merge SysAid ticket information
-        log_message("Loading SysAid ticket information...")
-        sysaid_df = load_sysaid_data()
-        if sysaid_df is not None:
-            log_message(f"Loaded {len(sysaid_df)} SysAid tickets")
-            # Merge SysAid data with session data
-            session_df = merge_sysaid_data(session_df, sysaid_df)
-        else:
-            log_message("No SysAid data loaded. Proceeding without ticket information.", "WARNING")
-        
-        # Ensure output directory exists
-        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-        
-        # Count records by source type in the session timeline
-        # This gives us accurate counts of how many records from each source made it to the output
-        source_count_dict = {}
-        
-        # First check if Source column exists
-        if SESSION_SOURCE_COL in session_df.columns:
-            # Get count of each source type - standardize to uppercase for consistency
-            source_counts = session_df[SESSION_SOURCE_COL].str.upper().value_counts()
-            
-            # We're only interested in the three SAP sources
-            for source in ['SM20', 'CDHDR', 'CDPOS']:
-                count = source_counts.get(source, 0)
-                source_count_dict[source.lower()] = count
-                log_message(f"Records from {source} in final timeline: {count}")
-                
-            # Now update record counts for each source
-            if os.path.exists(os.path.join(INPUT_DIR, "Mar_SM20_Sys.xlsx")):
-                record_counter.update_source_counts(
-                    source_type="sm20",
-                    file_name=os.path.join(INPUT_DIR, "Mar_SM20_Sys.xlsx"),
-                    original_count=15660,
-                    final_count=source_count_dict.get("sm20", 0)
-                )
-                
-            if os.path.exists(os.path.join(INPUT_DIR, "Mar_CDHDR_Sys.xlsx")):
-                record_counter.update_source_counts(
-                    source_type="cdhdr",
-                    file_name=os.path.join(INPUT_DIR, "Mar_CDHDR_Sys.xlsx"),
-                    original_count=4,
-                    final_count=source_count_dict.get("cdhdr", 0)
-                )
-                
-            if os.path.exists(os.path.join(INPUT_DIR, "FF_CDPOS_Mar.xlsx")):
-                record_counter.update_source_counts(
-                    source_type="cdpos",
-                    file_name=os.path.join(INPUT_DIR, "FF_CDPOS_Mar.xlsx"),
-                    original_count=8,
-                    final_count=source_count_dict.get("cdpos", 0)
-                )
-        else:
-            log_message(f"Warning: Source column '{SESSION_SOURCE_COL}' not found in session data", "WARNING")
-        
-        # Update timeline count with source breakdown
-        record_counter.update_timeline_count(len(session_df), source_count_dict)
-        
-        # Save record counts to file for future reference
-        record_counter.save_to_file()
-        
-        # Log the final counts for verification
-        log_message(f"Record counts by source type: SM20={source_count_dict.get('sm20', 0)}, " +
-                    f"CDHDR={source_count_dict.get('cdhdr', 0)}, CDPOS={source_count_dict.get('cdpos', 0)}")
-        
-        # Generate Excel output with session data (empty dataframes for legacy mode)
-        generate_excel_output(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), session_df, OUTPUT_FILE)
-        
-        # Step 5: Run automated analysis on the output file if analyzer is available
-        if 'ANALYZER_AVAILABLE' in globals() and ANALYZER_AVAILABLE:
-            log_message("Starting automated analysis of audit report...")
-            try:
-                analysis_success = run_analysis_from_audit_tool(OUTPUT_FILE)
-                if analysis_success:
-                    log_message("Automated analysis completed successfully")
-                else:
-                    log_message("Automated analysis failed or produced no significant results", "WARNING")
-            except Exception as e:
-                log_message(f"Error running automated analysis: {str(e)}", "ERROR")
-                import traceback
-                log_message(f"Analysis error details: {traceback.format_exc()}", "DEBUG")
-        else:
-            log_message("Skipping automated analysis (feature not available)", "INFO")
-        
-        # Calculate elapsed time
-        elapsed_time = time.time() - start_time
-        log_message(f"Processing complete in {elapsed_time:.2f} seconds.")
-        
-        log_message(f"Audit report saved to: {os.path.abspath(OUTPUT_FILE)}")
-        print(f"\nAudit report saved to: {os.path.abspath(OUTPUT_FILE)}")
-        
-        return True
+    # Set output format
+    config["output_format"] = args.format
     
-    except Exception as e:
-        log_message(f"Error in main execution: {str(e)}", "ERROR")
-        import traceback
-        log_message(f"Stack trace: {traceback.format_exc()}", "ERROR")
-        return False
+    # Set SysAid strategy
+    config["sysaid_source"] = args.sysaid
+    
+    # Set output path if specified
+    if args.output:
+        config["output_path"] = args.output
+    
+    # Set timeline file for existing mode
+    if args.timeline:
+        config["timeline_file"] = args.timeline
+    
+    return config
 
-if __name__ == "__main__":
-    # Add a banner
+
+def display_banner():
+    """Display a banner with tool information."""
+    version = SETTINGS.get("version", "1.0.0")
     banner = "\n" + "="*80 + "\n"
-    banner += " SAP AUDIT TOOL v{} ".format(VERSION).center(80, "*") + "\n"
+    banner += f" SAP AUDIT TOOL v{version} ".center(80, "*") + "\n"
     banner += " Enhanced Security Analysis for SAP Logs ".center(80) + "\n"
     banner += "="*80 + "\n"
     print(banner)
+
+
+def display_mode_info(mode):
+    """Display information about the selected processing mode."""
+    mode_description = MODES.get(mode, "Unknown mode")
+    print(f"\nProcessing Mode: {mode} - {mode_description}\n")
+
+
+@handle_exception
+def main():
+    """Main function to execute the SAP audit process."""
+    # Display banner
+    display_banner()
     
-    main()
+    # Parse command line arguments
+    args = parse_args()
+    
+    # Display mode information
+    display_mode_info(args.mode)
+    
+    # Log start of process
+    version = SETTINGS.get("version", "1.0.0")
+    log_section(f"SAP Audit Tool v{version}")
+    log_message(f"Starting in {args.mode} mode")
+    
+    # Create configuration from arguments
+    config = create_config_from_args(args)
+    
+    try:
+        # Create audit controller
+        controller = AuditController(config)
+        
+        # Process based on selected mode
+        if args.mode == "full":
+            # Run full audit
+            success = controller.run_full_audit()
+        elif args.mode == "prep":
+            # Run data preparation only
+            success = controller.run_data_preparation()
+        elif args.mode == "merge":
+            # Run data preparation and session merging
+            success = controller.run_data_preparation() and controller.run_session_merging()
+        elif args.mode == "existing":
+            # Process from existing timeline file
+            if not args.timeline:
+                log_message("Timeline file path is required for 'existing' mode", "ERROR")
+                return False
+                
+            try:
+                # Load the existing timeline
+                import pandas as pd
+                existing_timeline = pd.read_excel(args.timeline)
+                log_message(f"Loaded existing timeline with {len(existing_timeline)} records")
+                
+                # Set the session data and continue with risk assessment
+                controller.session_data = existing_timeline
+                
+                # Run remaining steps
+                risk_success = controller.run_risk_assessment()
+                sysaid_success = controller.run_sysaid_integration() if risk_success else False
+                output_success = controller.generate_output() if risk_success else False
+                
+                success = risk_success and output_success
+                
+            except Exception as e:
+                log_error(e, f"Failed to process existing timeline: {args.timeline}")
+                return False
+        else:
+            log_message(f"Unknown mode: {args.mode}", "ERROR")
+            return False
+        
+        return success
+        
+    except Exception as e:
+        log_error(e, "Unhandled exception in main process")
+        return False
+
+
+# Main execution
+if __name__ == "__main__":
+    success = main()
+    sys.exit(0 if success else 1)

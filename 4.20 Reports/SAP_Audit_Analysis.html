@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>SAP Audit Analysis Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; color: #333; }
+    h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+    h2 { color: #2980b9; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #3498db; }
+    .risk-Critical { background-color: #ff6b6b; color: white; padding: 2px 6px; border-radius: 3px; }
+    .risk-High { background-color: #ffa502; color: white; padding: 2px 6px; border-radius: 3px; }
+    .risk-Medium { background-color: #fdcb6e; color: #333; padding: 2px 6px; border-radius: 3px; }
+    .risk-Low { background-color: #1dd1a1; color: white; padding: 2px 6px; border-radius: 3px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .card { border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .card-header { background-color: #f8f9fa; padding: 10px; margin: -15px -15px 15px; border-bottom: 1px solid #ddd; border-radius: 4px 4px 0 0; }
+    .section { margin-bottom: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f2f2f2; }
+    tr:hover { background-color: #f5f5f5; }
+    .footer { margin-top: 50px; text-align: center; font-size: 0.8em; color: #7f8c8d; }
+  </style>
+</head>
+<body>
+  <div class='container'>
+    <h1>SAP Audit Security Analysis Report</h1>
+    <p>Generated: 2025-04-20 13:01:20</p>
+    <div class='section'>
+      <h2>Executive Summary</h2>
+      <div class='card'>
+        <table>
+          <tr>
+            <th>Risk Level</th>
+            <th>Count</th>
+            <th>Percentage</th>
+          </tr>
+          <tr>
+            <td><span class='risk-Critical'>Critical</span></td>
+            <td>91</td>
+            <td>0.6%</td>
+          </tr>
+          <tr>
+            <td><span class='risk-High'>High</span></td>
+            <td>86</td>
+            <td>0.5%</td>
+          </tr>
+          <tr>
+            <td><span class='risk-Medium'>Medium</span></td>
+            <td>13479</td>
+            <td>86.0%</td>
+          </tr>
+          <tr>
+            <td><span class='risk-Low'>Low</span></td>
+            <td>2012</td>
+            <td>12.8%</td>
+          </tr>
+          <tr>
+            <td><strong>Total Events</strong></td>
+            <td>15668</td>
+            <td>100%</td>
+          </tr>
+        </table>
+        <h3>Key Findings</h3>
+        <ul>
+          <li>4 high-risk item categories identified</li>
+          <li>3 users with suspicious activity</li>
+          <li>4 suspicious session patterns detected</li>
+          <li>177 total high-risk events requiring attention</li>
+        </ul>
+      </div>
+    </div>
+    <div class='section'>
+      <h2>High Priority Follow-up Items</h2>
+      <div class='card'>
+        <div class='card-header'><h3>1. Dynamic ABAP code execution (high-risk activity)</h3></div>
+        <p><strong>Count:</strong> 91 occurrences</p>
+        <p><strong>Recommendation:</strong> Review the specific code that was executed to verify it wasn't malicious</p>
+        <h4>Key Examples:</h4>
+        <table>
+          <tr>
+            <th>User</th>
+            <th>Session</th>
+            <th>TCode</th>
+            <th>Risk Level</th>
+          </tr>
+          <tr>
+            <td>FF_OTC</td>
+            <td>S0006 (2025-03-17)</td>
+            <td>N/A</td>
+            <td><span class='risk-Critical'>Critical</span></td>
+          </tr>
+          <tr>
+            <td>FF_OTC</td>
+            <td>S0009 (2025-03-25)</td>
+            <td>N/A</td>
+            <td><span class='risk-Critical'>Critical</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0011 (2025-03-28)</td>
+            <td>RMPS_SET_SUBSTITUTE</td>
+            <td><span class='risk-Critical'>Critical</span></td>
+          </tr>
+        </table>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>2. Direct table manipulation via SE16</h3></div>
+        <p><strong>Count:</strong> 23 occurrences</p>
+        <p><strong>Recommendation:</strong> Verify business justification for direct table access</p>
+        <h4>Key Examples:</h4>
+        <table>
+          <tr>
+            <th>User</th>
+            <th>Session</th>
+            <th>TCode</th>
+            <th>Risk Level</th>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0005 (2025-03-10)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0011 (2025-03-28)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0020 (2025-04-10)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+        </table>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>3. Changes with potentially missing audit trail</h3></div>
+        <p><strong>Count:</strong> 19 occurrences</p>
+        <p><strong>Recommendation:</strong> Verify if actual data changes occurred and why they weren't properly logged</p>
+        <h4>Key Examples:</h4>
+        <table>
+          <tr>
+            <th>User</th>
+            <th>Session</th>
+            <th>TCode</th>
+            <th>Risk Level</th>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0005 (2025-03-10)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0011 (2025-03-28)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0020 (2025-04-10)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+        </table>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>4. Debugging tools used in conjunction with data changes</h3></div>
+        <p><strong>Count:</strong> 19 occurrences</p>
+        <p><strong>Recommendation:</strong> Review the specific changes made during debugging to verify legitimacy</p>
+        <h4>Key Examples:</h4>
+        <table>
+          <tr>
+            <th>User</th>
+            <th>Session</th>
+            <th>TCode</th>
+            <th>Risk Level</th>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0005 (2025-03-10)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0011 (2025-03-28)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+          <tr>
+            <td>FF_PTP</td>
+            <td>S0020 (2025-04-10)</td>
+            <td>SE16</td>
+            <td><span class='risk-High'>High</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class='section'>
+      <h2>Key Users with Suspicious Activity</h2>
+      <div class='card'>
+        <div class='card-header'><h3>1. User: FF_OTC</h3></div>
+        <p><strong>High-risk activities:</strong> 90</p>
+        <p><strong>Activity types:</strong></p>
+        <ul>
+          <li>Dynamic ABAP code execution (high-risk activity)</li>
+        </ul>
+        <p><strong>Key transactions used:</strong></p>
+        <ul>
+          <li>N/A</li>
+        </ul>
+        <p><strong>Sessions:</strong></p>
+        <ul>
+          <li>S0006 (2025-03-17)</li>
+          <li>S0009 (2025-03-25)</li>
+          <li>S0012 (2025-03-31)</li>
+          <li>S0018 (2025-04-09)</li>
+        </ul>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>2. User: FF_PTP</h3></div>
+        <p><strong>High-risk activities:</strong> 86</p>
+        <p><strong>Activity types:</strong></p>
+        <ul>
+          <li>Changes with potentially missing audit trail</li>
+          <li>Debugging tools used in conjunction with data changes</li>
+          <li>Dynamic ABAP code execution (high-risk activity)</li>
+          <li>Direct table manipulation via SE16</li>
+        </ul>
+        <p><strong>Key transactions used:</strong></p>
+        <ul>
+          <li>SE16</li>
+          <li>SE16N</li>
+          <li>VL33N</li>
+          <li>RFC/SCWM/INB_DLV_SAV</li>
+          <li>SESSION_MANAGER</li>
+        </ul>
+        <p><strong>Sessions:</strong></p>
+        <ul>
+          <li>S0005 (2025-03-10)</li>
+          <li>S0010 (2025-03-27)</li>
+          <li>S0011 (2025-03-28)</li>
+          <li>S0020 (2025-04-10)</li>
+          <li>S0021 (2025-04-11)</li>
+        </ul>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>3. User: FF_STP</h3></div>
+        <p><strong>High-risk activities:</strong> 1</p>
+        <p><strong>Key transactions used:</strong></p>
+        <ul>
+          <li>N/A</li>
+        </ul>
+        <p><strong>Sessions:</strong></p>
+        <ul>
+          <li>S0002 (2025-03-04)</li>
+        </ul>
+      </div>
+    </div>
+    <div class='section'>
+      <h2>Suspicious Session Patterns</h2>
+      <div class='card'>
+        <div class='card-header'><h3>1. Session: S0005 (2025-03-10)</h3></div>
+        <p><strong>User:</strong> FF_PTP</p>
+        <p><strong>Pattern:</strong> Debugging combined with data changes, Potential stealth changes</p>
+        <p><strong>Key activities:</strong></p>
+        <ul>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+          <li>Delete from LIPS</li>
+          <li>Update to LIKP.TDUHR</li>
+        </ul>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>2. Session: S0011 (2025-03-28)</h3></div>
+        <p><strong>User:</strong> FF_PTP</p>
+        <p><strong>Pattern:</strong> Potential stealth changes</p>
+        <p><strong>Key activities:</strong></p>
+        <ul>
+          <li>Debug activity using RMPS_SET_SUBSTITUTE: Dynamic ABAP code execution</li>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+        </ul>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>3. Session: S0020 (2025-04-10)</h3></div>
+        <p><strong>User:</strong> FF_PTP</p>
+        <p><strong>Pattern:</strong> Potential stealth changes</p>
+        <p><strong>Key activities:</strong></p>
+        <ul>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+        </ul>
+      </div>
+      <div class='card'>
+        <div class='card-header'><h3>4. Session: S0021 (2025-04-11)</h3></div>
+        <p><strong>User:</strong> FF_PTP</p>
+        <p><strong>Pattern:</strong> Debugging combined with data changes, Potential stealth changes</p>
+        <p><strong>Key activities:</strong></p>
+        <ul>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+          <li>Debug activity using SE16: Data browser - Direct table data access (TCode</li>
+          <li>Delete from LIKP</li>
+          <li>Delete from LIPS</li>
+        </ul>
+      </div>
+    </div>
+    <div class='footer'>
+      <p>SAP Audit Analyzer v1.0.0</p>
+    </div>
+  </div>
+</body>
+</html>

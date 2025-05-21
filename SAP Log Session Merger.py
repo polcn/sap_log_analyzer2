@@ -6,7 +6,7 @@ This script combines SM20, CDHDR, and CDPOS logs into a user session timeline.
 It creates a unified, chronological view of SAP user activity for internal audit purposes.
 
 Key features:
-- Assigns session IDs based on user activity per calendar day (date-based sessions)
+- Assigns session IDs based on SysAid ticket numbers (or user+date when SysAid is unavailable)
 - Preserves all relevant fields from each source
 - Joins CDHDR with CDPOS to show field-level changes
 - Creates a formatted Excel output with color-coding by source
@@ -69,6 +69,82 @@ def log_message(message, level="INFO"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {level}: {message}")
 
+def find_sysaid_column(df):
+    """
+    Find the best column to use for SysAid ticket numbers.
+    Handles different naming conventions across data sources.
+    
+    Args:
+        df: DataFrame to search for SysAid columns
+        
+    Returns:
+        Column name to use for SysAid tickets, or None if not found
+    """
+    potential_columns = ['SYSAID#', 'SYSAID #', 'SysAid', 'Ticket#', 'Ticket', 'Change_Request']
+    
+    for col in potential_columns:
+        if col in df.columns:
+            # Check if the column has any non-empty values
+            if df[col].notna().any() and (df[col] != '').any():
+                log_message(f"Using '{col}' as SysAid ticket reference column")
+                return col
+    
+    log_message("No SysAid ticket column found with data", "WARNING")
+    return None
+
+def standardize_sysaid_references(df, sysaid_col):
+    """
+    Standardize SysAid ticket references to a consistent format.
+    - Handles prefixes like "SR-", "CR-", or "#"
+    - Removes commas from numbers
+    - Converts all references to uppercase
+    - Removes extraneous spaces
+    
+    Args:
+        df: DataFrame containing SysAid references
+        sysaid_col: Column containing SysAid references
+        
+    Returns:
+        DataFrame with standardized SysAid references
+    """
+    if sysaid_col not in df.columns:
+        return df
+        
+    # Make a copy to avoid warnings
+    df = df.copy()
+    
+    # Debug: print distinct values before standardization
+    original_values = df[sysaid_col].astype(str).unique().tolist()
+    log_message(f"Original SysAid values (sample of {min(10, len(original_values))} of {len(original_values)} unique): {original_values[:10]}")
+    
+    # Standardize SysAid references
+    df[sysaid_col] = df[sysaid_col].astype(str)
+    
+    # Handle empty values first - mark these as UNKNOWN
+    df.loc[df[sysaid_col].isin(['nan', 'None', 'NULL', 'NAN', 'NONE', '']), sysaid_col] = 'UNKNOWN'
+    
+    # Only process non-UNKNOWN values
+    mask = df[sysaid_col] != 'UNKNOWN'
+    if mask.any():
+        # Remove common prefixes including '#'
+        df.loc[mask, sysaid_col] = df.loc[mask, sysaid_col].str.replace(r'^(SR-|CR-|SR|CR|#)', '', regex=True)
+        
+        # Remove commas from numbers
+        df.loc[mask, sysaid_col] = df.loc[mask, sysaid_col].str.replace(',', '', regex=False)
+        
+        # Remove spaces and convert to uppercase
+        df.loc[mask, sysaid_col] = df.loc[mask, sysaid_col].str.strip().str.upper()
+    
+    # Debug: print distinct values after standardization
+    standardized_values = df[sysaid_col].unique().tolist()
+    log_message(f"Standardized SysAid values (sample of {min(10, len(standardized_values))} of {len(standardized_values)} unique): {standardized_values[:10]}")
+    
+    # Count of each unique value for debugging
+    value_counts = df[sysaid_col].value_counts().head(5).to_dict()
+    log_message(f"Top SysAid values by frequency: {value_counts}")
+    
+    return df
+
 def load_csv_file(file_path):
     """Load a CSV file with UTF-8-sig encoding."""
     try:
@@ -80,18 +156,88 @@ def load_csv_file(file_path):
         log_message(f"Error loading {file_path}: {str(e)}", "ERROR")
         return pd.DataFrame()
 
-def assign_session_ids(df, user_col, time_col, session_col='Session ID'):
+def assign_session_ids_by_sysaid(df, sysaid_col, time_col, session_col='Session ID'):
     """
-    Assign session IDs to rows based on user and calendar date.
-    A new session starts when:
-    1. User changes, or
-    2. Date changes (calendar day boundary)
+    Assign session IDs to rows based on SysAid ticket numbers.
+    A new session starts when the SysAid ticket number changes.
     
-    Sessions are numbered chronologically by their start date/time.
+    Args:
+        df: DataFrame containing session data
+        sysaid_col: Column name for SysAid ticket numbers
+        time_col: Column name for datetime
+        session_col: Output column name for session IDs
+        
+    Returns:
+        DataFrame with session IDs assigned
     """
     if len(df) == 0:
         return df
         
+    # Make a copy to avoid SettingWithCopyWarning
+    df = df.sort_values(by=[sysaid_col, time_col]).copy()
+    
+    # Create a standardized SysAid value
+    # - Fill missing values with a special indicator
+    # - Remove any leading/trailing whitespace
+    # - Standardize case
+    df['_temp_sysaid'] = df[sysaid_col].astype(str)
+    df.loc[df['_temp_sysaid'].isin(['nan', 'None', '']), '_temp_sysaid'] = 'UNKNOWN'
+    df['_temp_sysaid'] = df['_temp_sysaid'].str.strip().str.upper()
+    
+    # Sort SysAid numbers by their first occurrence timestamp
+    # This ensures that session IDs are assigned chronologically
+    first_occurrences = df.groupby('_temp_sysaid')[time_col].min().reset_index()
+    first_occurrences = first_occurrences.sort_values(by=time_col)
+    
+    # Create mapping from SysAid numbers to sequential session IDs
+    session_mapping = {
+        sysaid: f"S{i+1:04}" 
+        for i, sysaid in enumerate(first_occurrences['_temp_sysaid'])
+    }
+    
+    # Apply the mapping to create session IDs
+    df[session_col] = df['_temp_sysaid'].map(session_mapping)
+    
+    # Add session date for display purposes (from first occurrence of each SysAid)
+    first_date_mapping = {
+        sysaid: pd.to_datetime(timestamp).strftime('%Y-%m-%d')
+        for sysaid, timestamp in zip(first_occurrences['_temp_sysaid'], 
+                                     first_occurrences[time_col])
+    }
+    
+    df['Session_Date'] = df['_temp_sysaid'].map(first_date_mapping)
+    
+    # Create "Session ID with Date" format for display
+    df['Session ID with Date'] = df.apply(
+        lambda x: f"{x[session_col]} ({x['Session_Date']})", axis=1
+    )
+    
+    # Clean up temporary columns
+    df = df.drop(['_temp_sysaid'], axis=1)
+    
+    log_message(f"Assigned {len(session_mapping)} unique session IDs based on SysAid ticket numbers")
+    
+    return df
+
+def assign_session_ids_by_user_date(df, user_col, time_col, session_col='Session ID'):
+    """
+    Legacy method: Assign session IDs based on user and calendar date.
+    Used as fallback when SysAid column is not available.
+    
+    Args:
+        df: DataFrame containing session data
+        user_col: Column name for user
+        time_col: Column name for datetime
+        session_col: Output column name for session IDs
+        
+    Returns:
+        DataFrame with session IDs assigned
+    """
+    if len(df) == 0:
+        return df
+        
+    log_message("Using legacy session assignment based on user+date", "INFO")
+    
     # Make a copy to avoid SettingWithCopyWarning
     df = df.sort_values(by=[user_col, time_col]).copy()
     
@@ -151,7 +297,45 @@ def assign_session_ids(df, user_col, time_col, session_col='Session ID'):
     # Add session ID column
     df[session_col] = session_ids
     
+    # Add "Session ID with Date" column for display
+    df['Session_Date'] = df[time_col].dt.strftime('%Y-%m-%d')
+    df['Session ID with Date'] = df.apply(
+        lambda x: f"{x[session_col]} ({x['Session_Date']})", axis=1
+    )
+    df.drop('Session_Date', axis=1, inplace=True)
+    
     return df
+
+def assign_session_ids(df, user_col, time_col, session_col='Session ID', sysaid_col=None):
+    """
+    Assign session IDs to rows, using SysAid ticket numbers if available,
+    otherwise falling back to user+date based sessions.
+    
+    Args:
+        df: DataFrame containing session data
+        user_col: Column name for user
+        time_col: Column name for datetime
+        session_col: Output column name for session IDs
+        sysaid_col: Column name for SysAid ticket numbers (if None, will attempt to find it)
+        
+    Returns:
+        DataFrame with session IDs assigned
+    """
+    if len(df) == 0:
+        return df
+    
+    # If sysaid_col is not specified, try to find it
+    if sysaid_col is None:
+        sysaid_col = find_sysaid_column(df)
+    
+    # If we found a SysAid column with data, use it for grouping
+    if sysaid_col is not None:
+        log_message(f"Assigning session IDs based on SysAid ticket numbers from column: {sysaid_col}")
+        return assign_session_ids_by_sysaid(df, sysaid_col, time_col, session_col)
+    else:
+        # Fall back to legacy user+date based sessions
+        log_message("No SysAid column found. Falling back to user+date based sessions.", "WARNING")
+        return assign_session_ids_by_user_date(df, user_col, time_col, session_col)
 
 # --- Data Processing Functions ---
 def prepare_sm20(sm20):
@@ -539,15 +723,15 @@ def create_unified_timeline(sm20, cdhdr_cdpos):
     if 'record_index' in timeline.columns:
         timeline = timeline.drop(columns=['record_index'])
     
+    # Find and standardize SysAid ticket numbers if present
+    sysaid_col = find_sysaid_column(timeline)
+    if sysaid_col:
+        log_message(f"Found SysAid column: {sysaid_col}")
+        timeline = standardize_sysaid_references(timeline, sysaid_col)
+    
     # Now assign session IDs based on the combined timeline
     log_message("Assigning session IDs to combined timeline...")
-    timeline = assign_session_ids(timeline, 'User', 'Datetime')
-    
-    # Add date to session ID for clarity
-    timeline['Session_Date'] = timeline['Datetime'].dt.strftime('%Y-%m-%d')
-    timeline['Session ID with Date'] = timeline.apply(
-        lambda x: f"{x['Session ID']} ({x['Session_Date']})", axis=1
-    )
+    timeline = assign_session_ids(timeline, 'User', 'Datetime', sysaid_col=sysaid_col)
     
     # Extract numeric part of session ID for proper numerical sorting
     timeline['Session_Num'] = timeline['Session ID'].str.extract(r'S(\d+)').astype(int)
@@ -690,6 +874,13 @@ def main():
         
         # Step 2: Prepare data
         sm20_prepared = prepare_sm20(sm20)
+        
+        # Standardize SysAid references if present
+        sysaid_col = find_sysaid_column(sm20_prepared)
+        if sysaid_col:
+            log_message(f"Standardizing SysAid ticket references in column: {sysaid_col}")
+            sm20_prepared = standardize_sysaid_references(sm20_prepared, sysaid_col)
+            
         cdhdr_prepared = prepare_cdhdr(cdhdr)
         
         # Step 3: Merge CDHDR with CDPOS

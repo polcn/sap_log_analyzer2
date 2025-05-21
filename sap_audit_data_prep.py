@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
-SAP Audit Data Preparation Script
+SAP Audit Data Preparation Module
 
-This script prepares SAP log data files for the main audit tool by:
+This module prepares SAP log data files for the main audit tool by:
 1. Finding input files matching specific patterns in the input folder
 2. Converting all column headers to UPPERCASE
 3. Creating datetime columns from date and time fields
 4. Sorting data by user and datetime
 5. Saving the processed files as CSV with UTF-8-sig encoding in the same input folder
 6. Tracking record counts for completeness verification
+
+The module implements the Factory pattern for data source processing,
+with specialized processors for each data source type (SM20, CDHDR, CDPOS).
+Each processor handles validation, transformation, and output generation.
 """
 
 import os
@@ -17,178 +21,388 @@ import glob
 import pandas as pd
 from datetime import datetime, timedelta
 
+# Import configuration and utilities
+from sap_audit_config import PATHS, COLUMNS, PATTERNS, SETTINGS
+from sap_audit_utils import (
+    log_message, log_error, log_section, log_stats,
+    handle_exception, validate_required_columns, validate_data_quality,
+    clean_whitespace, find_latest_file
+)
+
 # Import the record counter
 from sap_audit_record_counts import record_counter
 
-# --- Configuration ---
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.path.join(SCRIPT_DIR, "input")
+# =========================================================================
+# DATA SOURCE PROCESSOR BASE CLASS
+# =========================================================================
 
-# File patterns to search for
-SM20_PATTERN = os.path.join(INPUT_DIR, "*_sm20_*.xlsx")
-CDHDR_PATTERN = os.path.join(INPUT_DIR, "*_cdhdr_*.xlsx")
-CDPOS_PATTERN = os.path.join(INPUT_DIR, "*_cdpos_*.xlsx")
-SYSAID_PATTERN = os.path.join(INPUT_DIR, "*sysaid*.xlsx")
-
-# Output file paths
-SM20_OUTPUT_FILE = os.path.join(INPUT_DIR, "SM20.csv")
-CDHDR_OUTPUT_FILE = os.path.join(INPUT_DIR, "CDHDR.csv")
-CDPOS_OUTPUT_FILE = os.path.join(INPUT_DIR, "CDPOS.csv")
-
-# Column name constants (UPPERCASE)
-# SM20 Security Audit Log columns
-SM20_USER_COL = 'USER'
-SM20_DATE_COL = 'DATE'
-SM20_TIME_COL = 'TIME'
-SM20_EVENT_COL = 'EVENT'
-SM20_TCODE_COL = 'SOURCE TA'
-SM20_ABAP_SOURCE_COL = 'ABAP SOURCE'
-SM20_MSG_COL = 'AUDIT LOG MSG. TEXT'
-SM20_NOTE_COL = 'NOTE'
-SM20_SYSAID_COL = 'SYSAID#'  # SysAid ticket reference field
-
-# SM20 Debugging/RFC Analysis fields
-SM20_VAR_FIRST_COL = 'FIRST VARIABLE VALUE FOR EVENT'
-SM20_VAR_2_COL = 'VARIABLE 2'
-SM20_VAR_DATA_COL = 'VARIABLE DATA FOR MESSAGE'
-
-# CDHDR Change Document Header columns
-CDHDR_USER_COL = 'USER'
-CDHDR_DATE_COL = 'DATE'
-CDHDR_TIME_COL = 'TIME'
-CDHDR_TCODE_COL = 'TCODE'
-CDHDR_CHANGENR_COL = 'DOC.NUMBER'
-CDHDR_OBJECTCLAS_COL = 'OBJECT'
-CDHDR_OBJECTID_COL = 'OBJECT VALUE'
-CDHDR_CHANGE_FLAG_COL = 'CHANGE FLAG FOR APPLICATION OBJECT'
-CDHDR_SYSAID_COL = 'SYSAID#'  # SysAid ticket reference field
-
-# CDPOS Change Document Item columns
-CDPOS_CHANGENR_COL = 'DOC.NUMBER'
-CDPOS_TABNAME_COL = 'TABLE NAME'
-CDPOS_TABLE_KEY_COL = 'TABLE KEY'
-CDPOS_FNAME_COL = 'FIELD NAME'
-CDPOS_CHANGE_IND_COL = 'CHANGE INDICATOR'
-CDPOS_TEXT_FLAG_COL = 'TEXT FLAG'
-CDPOS_VALUE_NEW_COL = 'NEW VALUE'
-CDPOS_VALUE_OLD_COL = 'OLD VALUE'
-
-# Fields to exclude (as per user request)
-EXCLUDE_FIELDS = ['COMMENTS']  # Removed 'SYSAID #' to include it in processing
-
-# Date/Time format
-DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'  # Matches '2025-03-10 19:17:23' format
-
-# --- Utility Functions ---
-def log_message(message, level="INFO"):
-    """Log a message with timestamp and level."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] {level}: {message}")
-
-def find_latest_file(pattern):
-    """Find the most recent file matching the pattern."""
-    files = glob.glob(pattern)
-    if not files:
-        return None
-    return max(files, key=os.path.getmtime)
-
-def clean_whitespace(df):
+class DataSourceProcessor:
     """
-    Clean whitespace from all columns in the dataframe and handle NaN values.
-
-    This function performs multi-stage cleaning:
-    1. Replaces all NaN values with empty strings
-    2. For string columns: trims whitespace and replaces 'nan' text with empty strings
-    3. For numeric columns: preserves data type while replacing NaN values appropriately
-
-    Args:
-        df (pandas.DataFrame): The dataframe to clean
-
-    Returns:
-        pandas.DataFrame: The cleaned dataframe
-    """
-    log_message("Cleaning whitespace and handling NaN values...")
-
-    # Make a copy to avoid modifying the original
-    df = df.copy()
-
-    # First pass: Replace NaN values with empty strings in all columns
-    df = df.fillna('')
-
-    # Second pass: Process all columns to ensure consistent data
-    nan_replaced_count = 0
-    for col in df.columns:
-        # Convert to string and remove whitespace for object columns
-        if df[col].dtype == 'object':  # String columns
-            # First ensure proper string conversion and strip whitespace
-            df[col] = df[col].astype(str).str.strip()
-
-            # Replace 'nan' or 'NaN' strings that might have come from NaN values
-            # Use more robust replacement to catch variations
-            nan_pattern = r'^nan$|^NaN$|^NAN$'
-            nan_mask = df[col].str.match(nan_pattern, case=False)
-            nan_count = nan_mask.sum()
-            if nan_count > 0:
-                df.loc[nan_mask, col] = ''
-                nan_replaced_count += nan_count
-        else:  # Numeric columns - need to handle differently
-            # For numeric columns we need to preserve their data type
-            # But still replace NaN with empty string for display purposes
-
-            # First identify NaN values
-            nan_mask = df[col].isna() | (df[col].astype(str).str.lower() == 'nan')
-
-            if nan_mask.any():
-                # Create a temporary series that maintains the type
-                temp_col = df[col].copy()
-                # Replace NaN with empty string (will convert column to object)
-                temp_col = temp_col.astype(str)
-                temp_col[nan_mask] = ''
-                df[col] = temp_col
-                nan_replaced_count += nan_mask.sum()
-
-    # Report the cleaning
-    log_message(f"Cleaned whitespace from {sum(df.dtypes == 'object')} string columns")
-    log_message(f"Replaced {nan_replaced_count} NaN values with empty strings")
-    return df
-
-def process_sm20(input_file, output_file):
-    """
-    Process SM20 security audit log file with enhanced data preparation.
+    Base class for data source processors.
     
-    Includes support for dynamic field mapping across different SAP export formats and
-    properly preserves the SysAid ticket reference field.
-    
-    Args:
-        input_file (str): Path to the input SM20 Excel file
-        output_file (str): Path where the processed CSV file will be saved
-    
-    Returns:
-        bool: True if processing was successful, False otherwise
+    This class provides the common functionality for processing different 
+    types of data sources (SM20, CDHDR, CDPOS). It defines the interface
+    that all data source processors must implement.
     """
-    try:
-        log_message(f"Reading SM20 file: {input_file}")
-        df = pd.read_excel(input_file)
+    
+    def __init__(self, source_type):
+        """
+        Initialize a data source processor.
         
-        # Check if empty
-        if df.empty:
-            log_message(f"Warning: SM20 file is empty: {input_file}", "WARNING")
-            return False
+        Args:
+            source_type: Type of data source (sm20, cdhdr, cdpos)
+        """
+        self.source_type = source_type
+        
+    def find_input_file(self):
+        """
+        Find the most recent file matching the pattern for this source.
+        
+        Returns:
+            Path to the most recent file, or None if no matches
+        """
+        pattern = PATTERNS.get(self.source_type)
+        return find_latest_file(pattern)
+        
+    def process(self, input_file, output_file):
+        """
+        Process the data source - to be implemented by subclasses.
+        
+        Args:
+            input_file: Path to the input file
+            output_file: Path where the processed file will be saved
             
-        # Store original record count for completeness tracking
-        original_count = len(df)
-        log_message(f"Original SM20 records: {original_count}")
+        Returns:
+            bool: True if processing was successful, False otherwise
+        """
+        raise NotImplementedError("Subclasses must implement process()")
+    
+    def read_source_file(self, input_file):
+        """
+        Read a source file with appropriate error handling.
         
+        Args:
+            input_file: Path to the input file
+            
+        Returns:
+            DataFrame with the source data, or None if error occurred
+        """
+        try:
+            log_message(f"Reading {self.source_type.upper()} file: {input_file}")
+            df = pd.read_excel(input_file)
+            
+            # Check if empty
+            if df.empty:
+                log_message(f"Warning: {self.source_type.upper()} file is empty: {input_file}", "WARNING")
+                return None
+                
+            # Store original record count for completeness tracking
+            original_count = len(df)
+            log_message(f"Original {self.source_type.upper()} records: {original_count}")
+                
+            # Store original column count
+            original_col_count = len(df.columns)
+            log_message(f"Original columns: {original_col_count}")
+            
+            return df
+        except Exception as e:
+            log_error(e, f"Error reading {self.source_type.upper()} file")
+            return None
+    
+    def standardize_columns(self, df):
+        """
+        Standardize column names to uppercase.
+        
+        Args:
+            df: DataFrame to standardize
+            
+        Returns:
+            DataFrame with standardized column names
+        """
+        if df is None or df.empty:
+            return df
+            
         # Store original column count
         original_col_count = len(df.columns)
-        log_message(f"Original columns: {original_col_count}")
         
         # Convert all column headers to uppercase
-        df.columns = [col.strip().upper() for col in df.columns]  # Keep strip() from master
+        df.columns = [col.strip().upper() for col in df.columns]
         log_message(f"Converted {original_col_count} column headers to UPPERCASE")
+        
+        return df
+    
+    def create_datetime_column(self, df, date_col, time_col):
+        """
+        Create datetime column from date and time fields.
+        
+        Args:
+            df: DataFrame to modify
+            date_col: Column name containing date
+            time_col: Column name containing time
+            
+        Returns:
+            DataFrame with added datetime column
+        """
+        if df is None or df.empty:
+            return df
+            
+        log_message("Creating datetime column from date and time fields")
+        try:
+            # Convert date and time columns to string to handle potential non-standard formats
+            date_str = df[date_col].astype(str)
+            time_str = df[time_col].astype(str)
+            
+            # Combine date and time
+            datetime_str = date_str + ' ' + time_str
+            
+            # Convert to datetime 
+            df['DATETIME'] = pd.to_datetime(datetime_str, errors='coerce')
+            
+            return df
+            
+        except Exception as e:
+            log_error(e, "Error creating datetime column")
+            # Attempt to continue with an empty datetime column
+            df['DATETIME'] = pd.NaT
+            return df
+    
+    def apply_field_mapping(self, df, field_mapping):
+        """
+        Apply field name mapping to standardize column names.
+        
+        Args:
+            df: DataFrame to modify
+            field_mapping: Dictionary of {old_name: new_name} mappings
+            
+        Returns:
+            DataFrame with standardized column names
+        """
+        if df is None or df.empty or not field_mapping:
+            return df
+            
+        # Apply field mapping - only if target column doesn't already exist
+        for old_name, new_name in field_mapping.items():
+            if old_name in df.columns and new_name not in df.columns:
+                df = df.rename(columns={old_name: new_name})
+                log_message(f"Mapped {old_name} to {new_name}")
+        
+        return df
+    
+    def add_missing_columns(self, df, required_columns):
+        """
+        Add empty columns for any missing required fields.
+        
+        Args:
+            df: DataFrame to modify
+            required_columns: List of required column names
+            
+        Returns:
+            DataFrame with all required columns
+        """
+        if df is None or df.empty:
+            return df
+            
+        # Add empty columns for any missing fields to ensure consistent schema
+        for field in required_columns:
+            if field not in df.columns:
+                log_message(f"Warning: Important field '{field}' not found in {self.source_type.upper()} data - adding empty column", "WARNING")
+                df[field] = ""  # Add empty column
+        
+        return df
+    
+    def remove_excluded_fields(self, df):
+        """
+        Remove excluded fields from the DataFrame.
+        
+        Args:
+            df: DataFrame to modify
+            
+        Returns:
+            DataFrame with excluded fields removed
+        """
+        if df is None or df.empty:
+            return df
+            
+        # Filter out excluded fields
+        for field in SETTINGS["exclude_fields"]:
+            if field in df.columns:
+                log_message(f"Removing excluded field '{field}' from {self.source_type.upper()} data")
+                df = df.drop(columns=[field])
+        
+        return df
+    
+    def save_processed_file(self, df, output_file):
+        """
+        Save the processed DataFrame to CSV.
+        
+        Args:
+            df: DataFrame to save
+            output_file: Path to save the file
+            
+        Returns:
+            bool: True if save was successful, False otherwise
+        """
+        if df is None or df.empty:
+            log_message(f"Cannot save empty DataFrame to {output_file}", "WARNING")
+            return False
+            
+        try:
+            log_message(f"Saving processed {self.source_type.upper()} file to: {output_file}")
+            df.to_csv(output_file, index=False, encoding=SETTINGS["encoding"])
+            
+            # Record final count
+            final_count = len(df)
+            log_message(f"Successfully saved {final_count} rows to {output_file}")
+            return True
+        except Exception as e:
+            log_error(e, f"Error saving to {output_file}")
+            return False
 
-        # Store original column names for later mapping
-        original_col_names = df.columns.tolist()  # Keep this line from v4.4.0-release
+# =========================================================================
+# SM20 PROCESSOR IMPLEMENTATION
+# =========================================================================
+
+class SM20Processor(DataSourceProcessor):
+    """
+    Processor for SM20 security audit log files.
+    
+    Handles the specific requirements for processing SM20 data, including:
+    - Dynamic field mapping for different SAP export formats
+    - SysAid ticket reference preservation
+    - Creating datetime from date and time fields
+    - Sorting by user and datetime
+    """
+    
+    def __init__(self):
+        """Initialize the SM20 processor."""
+        super().__init__("sm20")
+        
+    def validate_sm20_data(self, df):
+        """
+        Validate SM20 data before processing.
+        
+        Args:
+            df: DataFrame containing SM20 data
+            
+        Returns:
+            tuple: (is_valid, missing_columns)
+        """
+        if df is None or df.empty:
+            return False, []
+            
+        # Required columns from config
+        required_columns = [
+            COLUMNS["sm20"]["user"],
+            COLUMNS["sm20"]["date"],
+            COLUMNS["sm20"]["time"],
+            COLUMNS["sm20"]["event"]
+        ]
+        
+        return validate_required_columns(df, required_columns, "SM20")
+    
+    def get_sm20_field_mapping(self):
+        """
+        Get field mapping for SM20 columns that may have different names.
+        
+        Returns:
+            Dictionary mapping alternate column names to standard names
+        """
+        # Map to standardized column names from config
+        standard_cols = COLUMNS["sm20"]
+        
+        # This is based on SAP's dynamic column behavior where field labels 
+        # can change based on GUI layout, language, and kernel patch level
+        return {
+            # User column variations
+            'USERNAME': standard_cols["user"],
+            'USER NAME': standard_cols["user"],
+            'USER_NAME': standard_cols["user"],
+            
+            # Alternative date/time columns
+            'LOG_DATE': standard_cols["date"],
+            'LOG_TIME': standard_cols["time"],
+            
+            # Event variations
+            'EVENT_TYPE': standard_cols["event"],
+            
+            # Transaction code variations
+            'TRANSACTION': standard_cols["tcode"],
+            'TCODE': standard_cols["tcode"],
+            'TRANSACTION CODE': standard_cols["tcode"],
+            
+            # ABAP source code variations
+            'PROGRAM': standard_cols["abap_source"],
+            
+            # Message text variations
+            'MSG. TEXT': standard_cols["message"],
+            'MESSAGE': standard_cols["message"],
+            'MESSAGE TEXT': standard_cols["message"],
+
+            # Variable field variations - based on SAP export behavior
+            # First variable
+            'FIRST VARIABLE': standard_cols["var_first"],
+            'VARIABLE 1': standard_cols["var_first"],
+            'VARIABLE_1': standard_cols["var_first"],
+            'VARIABLE1': standard_cols["var_first"],
+            'VAR1': standard_cols["var_first"],
+            
+            # Second variable/data field
+            'VARIABLE 2': standard_cols["var_2"],
+            'VARIABLE_2': standard_cols["var_2"],
+            'VARIABLE2': standard_cols["var_2"],
+            'VAR2': standard_cols["var_2"],
+            
+            # Variable data field - contains important debugging details
+            'VARIABLE DATA': standard_cols["var_data"],
+            'VARIABLE_DATA': standard_cols["var_data"],
+            'VARIABLEDATA': standard_cols["var_data"],
+            'VARIABLE DATA FOR MESSAGE': standard_cols["var_data"],
+            'VARIABLE_D': standard_cols["var_data"],
+            'VARIABLED': standard_cols["var_data"],
+            
+            # Third variable field - can be VARIABLE 3 in some extracts
+            'VARIABLE 3': standard_cols["var_data"],
+            'VARIABLE_3': standard_cols["var_data"],
+            'VARIABLE3': standard_cols["var_data"],
+            'VAR3': standard_cols["var_data"],
+            
+            # SysAid ticket reference field - enhanced mapping to capture more variations
+            'SYSAID #': standard_cols["sysaid"],
+            'SYSAID#': standard_cols["sysaid"],
+            'SYSAID': standard_cols["sysaid"],
+            'TICKET #': standard_cols["sysaid"],
+            'TICKET#': standard_cols["sysaid"],
+            'TICKET': standard_cols["sysaid"],
+            'CHANGE REQUEST': standard_cols["sysaid"],
+            'CHANGE_REQUEST': standard_cols["sysaid"],
+            'CR': standard_cols["sysaid"],
+            'SR': standard_cols["sysaid"],
+            'CR #': standard_cols["sysaid"],
+            'SR #': standard_cols["sysaid"],
+        }
+    
+    @handle_exception
+    def process(self, input_file, output_file):
+        """
+        Process SM20 security audit log file with enhanced data preparation.
+        
+        Args:
+            input_file: Path to the input SM20 Excel file
+            output_file: Path where the processed CSV file will be saved
+        
+        Returns:
+            bool: True if processing was successful, False otherwise
+        """
+        # Read the source file
+        df = self.read_source_file(input_file)
+        if df is None:
+            return False
+        
+        # Store original record count for completeness tracking
+        original_count = len(df)
+        
+        # Standardize column names
+        df = self.standardize_columns(df)
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
@@ -197,171 +411,182 @@ def process_sm20(input_file, output_file):
         after_cleaning_count = len(df)
         log_message(f"SM20 records after cleaning: {after_cleaning_count}")
         
-        # Handle field mapping for SM20 columns that may have different names in different extracts
-        # This is based on SAP's dynamic column behavior where field labels can change based on
-        # GUI layout, language, and kernel patch level
-        field_mapping = {
-            # User column variations
-            'USERNAME': SM20_USER_COL,
-            'USER NAME': SM20_USER_COL,
-            'USER_NAME': SM20_USER_COL,
-            
-            # Alternative date/time columns
-            'LOG_DATE': SM20_DATE_COL,
-            'LOG_TIME': SM20_TIME_COL,
-            
-            # Event variations
-            'EVENT_TYPE': SM20_EVENT_COL,
-            
-            # Transaction code variations
-            'TRANSACTION': SM20_TCODE_COL,
-            'TCODE': SM20_TCODE_COL,
-            'TRANSACTION CODE': SM20_TCODE_COL,
-            
-            # ABAP source code variations
-            'PROGRAM': SM20_ABAP_SOURCE_COL,
-            
-            # Message text variations
-            'MSG. TEXT': SM20_MSG_COL,
-            'MESSAGE': SM20_MSG_COL,
-            'MESSAGE TEXT': SM20_MSG_COL,
-
-            # Variable field variations - based on SAP export behavior
-            # First variable
-            'FIRST VARIABLE': SM20_VAR_FIRST_COL,
-            'VARIABLE 1': SM20_VAR_FIRST_COL,
-            'VARIABLE_1': SM20_VAR_FIRST_COL,
-            'VARIABLE1': SM20_VAR_FIRST_COL,
-            'VAR1': SM20_VAR_FIRST_COL,
-            # Second variable/data field - these are actually the same field with different labels
-            'VARIABLE 2': SM20_VAR_2_COL,
-            'VARIABLE_2': SM20_VAR_2_COL,
-            'VARIABLE2': SM20_VAR_2_COL, # In some extracts (March)
-            'VAR2': SM20_VAR_DATA_COL,
-            
-            # Variable data field - contains important debugging details
-            'VARIABLE DATA': SM20_VAR_DATA_COL, # In some extracts (March)
-            'VARIABLE_DATA': SM20_VAR_DATA_COL,
-            'VARIABLEDATA': SM20_VAR_DATA_COL,
-            'VARIABLE DATA FOR MESSAGE': SM20_VAR_DATA_COL,
-            'VARIABLE_D': SM20_VAR_DATA_COL,
-            'VARIABLED': SM20_VAR_DATA_COL,
-            
-            # Third variable field - can be VARIABLE 3 in some extracts
-            'VARIABLE 3': SM20_VAR_DATA_COL,  # Also maps to VAR_DATA as per SAP's behavior
-            'VARIABLE_3': SM20_VAR_DATA_COL,
-            'VARIABLE3': SM20_VAR_DATA_COL,
-            'VAR3': SM20_VAR_DATA_COL,
-            
-            # SysAid ticket reference field - preserve original format for tests
-            'SYSAID #': 'SYSAID #',
-            'SYSAID': SM20_SYSAID_COL,
-            'TICKET #': SM20_SYSAID_COL,
-            'TICKET': SM20_SYSAID_COL,
-        }
+        # Apply field mapping for different SAP export formats
+        field_mapping = self.get_sm20_field_mapping()
+        df = self.apply_field_mapping(df, field_mapping)
         
-        # Apply field mapping - only if target column doesn't already exist
-        for old_name, new_name in field_mapping.items():
-            if old_name in df.columns and new_name not in df.columns:
-                df = df.rename(columns={old_name: new_name})
+        # Validate required columns are present
+        is_valid, missing_columns = self.validate_sm20_data(df)
+        if not is_valid:
+            log_message(f"SM20 data validation failed. Missing columns: {', '.join(missing_columns)}", "ERROR")
+            # Continue with best effort approach
         
-        # Check for important fields
-        important_sm20_fields = [
-            SM20_USER_COL, SM20_DATE_COL, SM20_TIME_COL, SM20_EVENT_COL,
-            SM20_TCODE_COL, SM20_MSG_COL, SM20_VAR_FIRST_COL,
-            SM20_VAR_2_COL, SM20_VAR_DATA_COL
+        # Run data quality validation
+        df = validate_data_quality(df, "SM20")
+        
+        # Add missing required columns if any
+        required_columns = [
+            COLUMNS["sm20"]["user"], 
+            COLUMNS["sm20"]["date"], 
+            COLUMNS["sm20"]["time"], 
+            COLUMNS["sm20"]["event"],
+            COLUMNS["sm20"]["tcode"], 
+            COLUMNS["sm20"]["message"], 
+            COLUMNS["sm20"]["var_first"],
+            COLUMNS["sm20"]["var_2"], 
+            COLUMNS["sm20"]["var_data"]
         ]
+        df = self.add_missing_columns(df, required_columns)
         
-        # Add empty columns for any missing fields to ensure consistent schema
-        for field in important_sm20_fields:
-            if field not in df.columns:
-                log_message(f"Warning: Important field '{field}' not found in SM20 data - adding empty column", "WARNING")
-                df[field] = ""  # Add empty column
-        
-        # Filter out excluded fields
-        for field in EXCLUDE_FIELDS:
-            if field in df.columns:
-                log_message(f"Removing excluded field '{field}' from SM20 data")
-                df = df.drop(columns=[field])
+        # Remove excluded fields
+        df = self.remove_excluded_fields(df)
         
         # Create datetime column from date and time fields
-        log_message("Creating datetime column from date and time fields")
-        try:
-            # Convert date and time columns to string to handle potential non-standard formats
-            date_str = df[SM20_DATE_COL].astype(str)
-            time_str = df[SM20_TIME_COL].astype(str)
-            
-            # Combine date and time
-            datetime_str = date_str + ' ' + time_str
-            
-            # Convert to datetime 
-            df['DATETIME'] = pd.to_datetime(datetime_str, errors='coerce')
-            
-            # Sort by user and datetime
-            log_message("Sorting SM20 data by user and datetime")
-            df = df.sort_values(by=[SM20_USER_COL, 'DATETIME'])
-            
-        except Exception as e:
-            log_message(f"Error creating datetime column: {str(e)}", "ERROR")
-            # Attempt to continue with an empty datetime column
-            df['DATETIME'] = pd.NaT
+        df = self.create_datetime_column(df, COLUMNS["sm20"]["date"], COLUMNS["sm20"]["time"])
+        
+        # Sort by user and datetime
+        log_message("Sorting SM20 data by user and datetime")
+        df = df.sort_values(by=[COLUMNS["sm20"]["user"], 'DATETIME'])
         
         # Save the processed file
-        log_message(f"Saving processed SM20 file to: {output_file}")
-        df.to_csv(output_file, index=False, encoding='utf-8-sig')
+        success = self.save_processed_file(df, output_file)
         
-        # Record final count
-        final_count = len(df)
-        log_message(f"Successfully saved {final_count} rows to {output_file}")
-        
-        # Update record counter
-        record_counter.update_source_counts(
-            source_type="sm20",
-            file_name=input_file,
-            original_count=original_count,
-            after_cleaning=after_cleaning_count,
-            final_count=final_count
-        )
-        
-        return True
-        
-    except Exception as e:
-        log_message(f"Error processing SM20 file: {str(e)}", "ERROR")
-        return False
+        if success:
+            # Update record counter
+            record_counter.update_source_counts(
+                source_type="sm20",
+                file_name=input_file,
+                original_count=original_count,
+                after_cleaning=after_cleaning_count,
+                final_count=len(df)
+            )
+            return True
+        else:
+            return False
 
-def process_cdhdr(input_file, output_file):
+# =========================================================================
+# CDHDR PROCESSOR IMPLEMENTATION
+# =========================================================================
+
+class CDHDRProcessor(DataSourceProcessor):
     """
-    Process CDHDR change document header file with enhanced data preparation.
+    Processor for CDHDR change document header files.
     
-    Includes support for dynamic field mapping and preserves SysAid ticket references.
-    
-    Args:
-        input_file (str): Path to the input CDHDR Excel file
-        output_file (str): Path where the processed CSV file will be saved
-    
-    Returns:
-        bool: True if processing was successful, False otherwise
+    Handles the specific requirements for processing CDHDR data, including:
+    - Field mapping for different SAP export formats
+    - SysAid ticket reference preservation
+    - Creating datetime from date and time fields
+    - Sorting by user and datetime
     """
-    try:
-        log_message(f"Reading CDHDR file: {input_file}")
-        df = pd.read_excel(input_file)
+    
+    def __init__(self):
+        """Initialize the CDHDR processor."""
+        super().__init__("cdhdr")
         
-        # Check if empty
-        if df.empty:
-            log_message(f"Warning: CDHDR file is empty: {input_file}", "WARNING")
+    def validate_cdhdr_data(self, df):
+        """
+        Validate CDHDR data before processing.
+        
+        Args:
+            df: DataFrame containing CDHDR data
+            
+        Returns:
+            tuple: (is_valid, missing_columns)
+        """
+        if df is None or df.empty:
+            return False, []
+            
+        # Required columns from config
+        required_columns = [
+            COLUMNS["cdhdr"]["user"],
+            COLUMNS["cdhdr"]["date"],
+            COLUMNS["cdhdr"]["time"],
+            COLUMNS["cdhdr"]["change_number"]
+        ]
+        
+        return validate_required_columns(df, required_columns, "CDHDR")
+    
+    def get_cdhdr_field_mapping(self):
+        """
+        Get field mapping for CDHDR columns that may have different names.
+        
+        Returns:
+            Dictionary mapping alternate column names to standard names
+        """
+        # Map to standardized column names from config
+        standard_cols = COLUMNS["cdhdr"]
+        
+        # Based on SAP's variable field dynamics across different exports
+        return {
+            # Transaction code variations
+            'TRANSACTION': standard_cols["tcode"],
+            'TRANSACTION CODE': standard_cols["tcode"],
+            'TRANSACTION_CODE': standard_cols["tcode"],
+            
+            # User name variations
+            'USERNAME': standard_cols["user"],
+            'USER NAME': standard_cols["user"],
+            'USER_NAME': standard_cols["user"],
+            
+            # Change document number variations
+            'CHANGE DOC.': standard_cols["change_number"],
+            'CHANGE DOCUMENT': standard_cols["change_number"],
+            'CHANGEDOCUMENT': standard_cols["change_number"],
+            'CHANGE NUMBER': standard_cols["change_number"],
+            'CHANGENUMBER': standard_cols["change_number"],
+            
+            # Object class variations
+            'OBJECTCLASS': standard_cols["object"],
+            'OBJECT CLASS': standard_cols["object"],
+            'OBJECT_CLASS': standard_cols["object"],
+            
+            # Object ID variations
+            'OBJECTID': standard_cols["object_id"],
+            'OBJECT ID': standard_cols["object_id"],
+            'OBJECT_ID': standard_cols["object_id"],
+            
+            # Change flag variations
+            'CHANGE FLAG': standard_cols["change_flag"],
+            'CHANGEFLAG': standard_cols["change_flag"],
+            'CHANGE_FLAG': standard_cols["change_flag"],
+            
+            # SysAid ticket reference field variations
+            'SYSAID #': standard_cols["sysaid"],
+            'SYSAID#': standard_cols["sysaid"],
+            'SYSAID': standard_cols["sysaid"],
+            'TICKET #': standard_cols["sysaid"],
+            'TICKET#': standard_cols["sysaid"],
+            'TICKET': standard_cols["sysaid"],
+            'CHANGE REQUEST': standard_cols["sysaid"],
+            'CHANGE_REQUEST': standard_cols["sysaid"],
+            'CR': standard_cols["sysaid"],
+            'SR': standard_cols["sysaid"],
+            'CR #': standard_cols["sysaid"],
+            'SR #': standard_cols["sysaid"],
+        }
+    
+    @handle_exception
+    def process(self, input_file, output_file):
+        """
+        Process CDHDR change document header file with enhanced data preparation.
+        
+        Args:
+            input_file: Path to the input CDHDR Excel file
+            output_file: Path where the processed CSV file will be saved
+        
+        Returns:
+            bool: True if processing was successful, False otherwise
+        """
+        # Read the source file
+        df = self.read_source_file(input_file)
+        if df is None:
             return False
         
         # Store original record count for completeness tracking
         original_count = len(df)
-        log_message(f"Original CDHDR records: {original_count}")
-            
-        # Store original column count
-        original_col_count = len(df.columns)
-        log_message(f"Original columns: {original_col_count}")
         
-        # Convert all column headers to uppercase
-        df.columns = [col.upper() for col in df.columns]
-        log_message(f"Converted {original_col_count} column headers to UPPERCASE")
+        # Standardize column names
+        df = self.standardize_columns(df)
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
@@ -370,149 +595,149 @@ def process_cdhdr(input_file, output_file):
         after_cleaning_count = len(df)
         log_message(f"CDHDR records after cleaning: {after_cleaning_count}")
         
-        # Handle field mapping for alternate field names that might be in raw exports
-
-        # Enhanced based on the SAP's variable field dynamics across different exports
-        field_mapping = {
-            # Transaction code variations
-            'TRANSACTION': CDHDR_TCODE_COL,
-            'TRANSACTION CODE': CDHDR_TCODE_COL,
-            'TRANSACTION_CODE': CDHDR_TCODE_COL,
-            
-            # User name variations
-            'USERNAME': CDHDR_USER_COL,
-            'USER NAME': CDHDR_USER_COL,
-            'USER_NAME': CDHDR_USER_COL,
-            
-            # Change document number variations
-            'CHANGE DOC.': CDHDR_CHANGENR_COL,
-            'CHANGE DOCUMENT': CDHDR_CHANGENR_COL,
-            'CHANGEDOCUMENT': CDHDR_CHANGENR_COL,
-            'CHANGE NUMBER': CDHDR_CHANGENR_COL,
-            'CHANGENUMBER': CDHDR_CHANGENR_COL,
-            
-            # Object class variations
-            'OBJECTCLASS': CDHDR_OBJECTCLAS_COL,
-            'OBJECT CLASS': CDHDR_OBJECTCLAS_COL,
-            'OBJECT_CLASS': CDHDR_OBJECTCLAS_COL,
-            
-            # Object ID variations
-            'OBJECTID': CDHDR_OBJECTID_COL,
-            'OBJECT ID': CDHDR_OBJECTID_COL,
-            'OBJECT_ID': CDHDR_OBJECTID_COL,
-            
-            # Change flag variations
-            'CHANGE FLAG': CDHDR_CHANGE_FLAG_COL,
-            'CHANGEFLAG': CDHDR_CHANGE_FLAG_COL,
-            'CHANGE_FLAG': CDHDR_CHANGE_FLAG_COL,
-            
-            # SysAid ticket reference field - special handling for consistency
-            'SYSAID #': CDHDR_SYSAID_COL,
-            'SYSAID': CDHDR_SYSAID_COL,
-            'TICKET #': CDHDR_SYSAID_COL,
-            'TICKET': CDHDR_SYSAID_COL,
-        }
+        # Apply field mapping for different SAP export formats
+        field_mapping = self.get_cdhdr_field_mapping()
+        df = self.apply_field_mapping(df, field_mapping)
         
-        # Apply field mapping - only if target column doesn't already exist
-        for old_name, new_name in field_mapping.items():
-            if old_name in df.columns and new_name not in df.columns:
-                df = df.rename(columns={old_name: new_name})
-                log_message(f"Mapped {old_name} to {new_name}")
+        # Validate required columns are present
+        is_valid, missing_columns = self.validate_cdhdr_data(df)
+        if not is_valid:
+            log_message(f"CDHDR data validation failed. Missing columns: {', '.join(missing_columns)}", "ERROR")
+            # Continue with best effort approach
         
-        # Check for important fields
-        important_cdhdr_fields = [
-            CDHDR_USER_COL, CDHDR_DATE_COL, CDHDR_TIME_COL, CDHDR_TCODE_COL,
-            CDHDR_CHANGENR_COL, CDHDR_OBJECTCLAS_COL, CDHDR_OBJECTID_COL
+        # Run data quality validation
+        df = validate_data_quality(df, "CDHDR")
+        
+        # Add missing required columns if any
+        required_columns = [
+            COLUMNS["cdhdr"]["user"], 
+            COLUMNS["cdhdr"]["date"], 
+            COLUMNS["cdhdr"]["time"], 
+            COLUMNS["cdhdr"]["tcode"],
+            COLUMNS["cdhdr"]["change_number"], 
+            COLUMNS["cdhdr"]["object"], 
+            COLUMNS["cdhdr"]["object_id"]
         ]
+        df = self.add_missing_columns(df, required_columns)
         
-        # Add empty columns for any missing fields to ensure consistent schema
-        for field in important_cdhdr_fields:
-            if field not in df.columns:
-                log_message(f"Warning: Important field '{field}' not found in CDHDR data - adding empty column", "WARNING")
-                df[field] = ""  # Add empty column
-        
-        # Filter out excluded fields
-        for field in EXCLUDE_FIELDS:
-            if field in df.columns:
-                log_message(f"Removing excluded field '{field}' from CDHDR data")
-                df = df.drop(columns=[field])
+        # Remove excluded fields
+        df = self.remove_excluded_fields(df)
         
         # Create datetime column from date and time fields
-        log_message("Creating datetime column from date and time fields")
-        try:
-            # Convert date and time columns to string to handle potential non-standard formats
-            date_str = df[CDHDR_DATE_COL].astype(str)
-            time_str = df[CDHDR_TIME_COL].astype(str)
-            
-            # Combine date and time
-            datetime_str = date_str + ' ' + time_str
-            
-            # Convert to datetime
-            df['DATETIME'] = pd.to_datetime(datetime_str, errors='coerce')
-            
-            # Sort by user and datetime
-            log_message("Sorting CDHDR data by user and datetime")
-            df = df.sort_values(by=[CDHDR_USER_COL, 'DATETIME'])
-            
-        except Exception as e:
-            log_message(f"Error creating datetime column: {str(e)}", "ERROR")
-            # Attempt to continue with an empty datetime column
-            df['DATETIME'] = pd.NaT
+        df = self.create_datetime_column(df, COLUMNS["cdhdr"]["date"], COLUMNS["cdhdr"]["time"])
+        
+        # Sort by user and datetime
+        log_message("Sorting CDHDR data by user and datetime")
+        df = df.sort_values(by=[COLUMNS["cdhdr"]["user"], 'DATETIME'])
         
         # Save the processed file
-        log_message(f"Saving processed CDHDR file to: {output_file}")
-        df.to_csv(output_file, index=False, encoding='utf-8-sig')
+        success = self.save_processed_file(df, output_file)
         
-        # Record final count
-        final_count = len(df)
-        log_message(f"Successfully saved {final_count} rows to {output_file}")
-        
-        # Update record counter
-        record_counter.update_source_counts(
-            source_type="cdhdr",
-            file_name=input_file,
-            original_count=original_count,
-            after_cleaning=after_cleaning_count,
-            final_count=final_count
-        )
-        
-        return True
-        
-    except Exception as e:
-        log_message(f"Error processing CDHDR file: {str(e)}", "ERROR")
-        return False
+        if success:
+            # Update record counter
+            record_counter.update_source_counts(
+                source_type="cdhdr",
+                file_name=input_file,
+                original_count=original_count,
+                after_cleaning=after_cleaning_count,
+                final_count=len(df)
+            )
+            return True
+        else:
+            return False
 
-def process_cdpos(input_file, output_file):
+# =========================================================================
+# CDPOS PROCESSOR IMPLEMENTATION
+# =========================================================================
+
+class CDPOSProcessor(DataSourceProcessor):
     """
-    Process CDPOS change document items file with enhanced data preparation.
+    Processor for CDPOS change document item files.
     
-    Args:
-        input_file (str): Path to the input CDPOS Excel file
-        output_file (str): Path where the processed CSV file will be saved
-    
-    Returns:
-        bool: True if processing was successful, False otherwise
+    Handles the specific requirements for processing CDPOS data, including:
+    - Standardizing change indicators
+    - Preserving table keys and field names
+    - Sorting by change document number
     """
-    try:
-        log_message(f"Reading CDPOS file: {input_file}")
-        df = pd.read_excel(input_file)
+    
+    def __init__(self):
+        """Initialize the CDPOS processor."""
+        super().__init__("cdpos")
         
-        # Check if empty
-        if df.empty:
-            log_message(f"Warning: CDPOS file is empty: {input_file}", "WARNING")
+    def validate_cdpos_data(self, df):
+        """
+        Validate CDPOS data before processing.
+        
+        Args:
+            df: DataFrame containing CDPOS data
+            
+        Returns:
+            tuple: (is_valid, missing_columns)
+        """
+        if df is None or df.empty:
+            return False, []
+            
+        # Required columns from config
+        required_columns = [
+            COLUMNS["cdpos"]["change_number"],
+            COLUMNS["cdpos"]["table_name"],
+            COLUMNS["cdpos"]["field_name"],
+            COLUMNS["cdpos"]["change_indicator"]
+        ]
+        
+        return validate_required_columns(df, required_columns, "CDPOS")
+    
+    def standardize_change_indicators(self, df):
+        """
+        Standardize change indicators to uppercase.
+        
+        Args:
+            df: DataFrame to standardize
+            
+        Returns:
+            DataFrame with standardized change indicators
+        """
+        if df is None or df.empty:
+            return df
+            
+        change_ind_col = COLUMNS["cdpos"]["change_indicator"]
+        
+        try:
+            if change_ind_col in df.columns:
+                # First get all unique values to report
+                unique_indicators = df[change_ind_col].unique()
+                log_message(f"Found {len(unique_indicators)} unique change indicator values: {' '.join(map(str, unique_indicators))}")
+                
+                # Then convert all to uppercase
+                df[change_ind_col] = df[change_ind_col].str.upper()
+                log_message("Standardized all change indicators to uppercase")
+        except Exception as e:
+            log_error(e, "Error standardizing change indicators")
+        
+        return df
+    
+    @handle_exception
+    def process(self, input_file, output_file):
+        """
+        Process CDPOS change document items file with enhanced data preparation.
+        
+        Args:
+            input_file: Path to the input CDPOS Excel file
+            output_file: Path where the processed CSV file will be saved
+        
+        Returns:
+            bool: True if processing was successful, False otherwise
+        """
+        # Read the source file
+        df = self.read_source_file(input_file)
+        if df is None:
             return False
         
         # Store original record count for completeness tracking
         original_count = len(df)
-        log_message(f"Original CDPOS records: {original_count}")
-            
-        # Store original column count
-        original_col_count = len(df.columns)
-        log_message(f"Original columns: {original_col_count}")
         
-        # Convert all column headers to uppercase
-        df.columns = [col.upper() for col in df.columns]
-        log_message(f"Converted {original_col_count} column headers to UPPERCASE")
+        # Standardize column names
+        df = self.standardize_columns(df)
         
         # Clean whitespace and handle NaN values
         df = clean_whitespace(df)
@@ -521,101 +746,165 @@ def process_cdpos(input_file, output_file):
         after_cleaning_count = len(df)
         log_message(f"CDPOS records after cleaning: {after_cleaning_count}")
         
-        # Check for important fields
-        important_cdpos_fields = [
-            CDPOS_CHANGENR_COL, CDPOS_TABNAME_COL, CDPOS_TABLE_KEY_COL,
-            CDPOS_FNAME_COL, CDPOS_CHANGE_IND_COL, CDPOS_TEXT_FLAG_COL,
-            CDPOS_VALUE_NEW_COL, CDPOS_VALUE_OLD_COL
+        # Validate required columns are present
+        is_valid, missing_columns = self.validate_cdpos_data(df)
+        if not is_valid:
+            log_message(f"CDPOS data validation failed. Missing columns: {', '.join(missing_columns)}", "ERROR")
+            # Continue with best effort approach
+        
+        # Run data quality validation
+        df = validate_data_quality(df, "CDPOS")
+        
+        # Add missing required columns if any
+        required_columns = [
+            COLUMNS["cdpos"]["change_number"],
+            COLUMNS["cdpos"]["table_name"], 
+            COLUMNS["cdpos"]["table_key"],
+            COLUMNS["cdpos"]["field_name"], 
+            COLUMNS["cdpos"]["change_indicator"], 
+            COLUMNS["cdpos"]["text_flag"],
+            COLUMNS["cdpos"]["value_new"], 
+            COLUMNS["cdpos"]["value_old"]
         ]
+        df = self.add_missing_columns(df, required_columns)
         
-        # Add empty columns for any missing fields to ensure consistent schema
-        for field in important_cdpos_fields:
-            if field not in df.columns:
-                log_message(f"Warning: Important field '{field}' not found in CDPOS data - adding empty column", "WARNING")
-                df[field] = ""  # Add empty column
+        # Remove excluded fields
+        df = self.remove_excluded_fields(df)
         
-        # Filter out excluded fields
-        for field in EXCLUDE_FIELDS:
-            if field in df.columns:
-                log_message(f"Removing excluded field '{field}' from CDPOS data")
-                df = df.drop(columns=[field])
-        
-        # Standardize change indicators to uppercase
-        try:
-            if CDPOS_CHANGE_IND_COL in df.columns:
-                # First get all unique values to report
-                unique_indicators = df[CDPOS_CHANGE_IND_COL].unique()
-                log_message(f"Found {len(unique_indicators)} unique change indicator values: {' '.join(map(str, unique_indicators))}")
-                
-                # Then convert all to uppercase
-                df[CDPOS_CHANGE_IND_COL] = df[CDPOS_CHANGE_IND_COL].str.upper()
-                log_message("Standardized all change indicators to uppercase")
-        except Exception as e:
-            log_message(f"Error standardizing change indicators: {str(e)}", "WARNING")
+        # Standardize change indicators
+        df = self.standardize_change_indicators(df)
         
         # Sort by change document number
         log_message("Sorting CDPOS data by change document number")
-        df = df.sort_values(by=[CDPOS_CHANGENR_COL])
+        df = df.sort_values(by=[COLUMNS["cdpos"]["change_number"]])
         
         # Save the processed file
-        log_message(f"Saving processed CDPOS file to: {output_file}")
-        df.to_csv(output_file, index=False, encoding='utf-8-sig')
+        success = self.save_processed_file(df, output_file)
         
-        # Record final count
-        final_count = len(df)
-        log_message(f"Successfully saved {final_count} rows to {output_file}")
-        
-        # Update record counter
-        record_counter.update_source_counts(
-            source_type="cdpos",
-            file_name=input_file,
-            original_count=original_count,
-            after_cleaning=after_cleaning_count,
-            final_count=final_count
-        )
-        
-        return True
-        
-    except Exception as e:
-        log_message(f"Error processing CDPOS file: {str(e)}", "ERROR")
-        return False
+        if success:
+            # Update record counter
+            record_counter.update_source_counts(
+                source_type="cdpos",
+                file_name=input_file,
+                original_count=original_count,
+                after_cleaning=after_cleaning_count,
+                final_count=len(df)
+            )
+            return True
+        else:
+            return False
 
+# =========================================================================
+# DATA PREPARATION MANAGER
+# =========================================================================
+
+class DataPrepManager:
+    """
+    Manager class for data preparation processes.
+    
+    This class orchestrates the preparation of all SAP data files by:
+    1. Finding appropriate input files for each data source
+    2. Processing them using specialized processors
+    3. Tracking success/failure of each step
+    4. Reporting on results
+    
+    It acts as a facade for the various data processors, providing
+    a unified interface for the controller to interact with.
+    """
+    
+    def __init__(self, config=None):
+        """
+        Initialize the data preparation manager.
+        
+        Args:
+            config: Optional configuration dictionary that can override
+                   default settings and paths.
+        """
+        self.config = config or {}
+        self.paths = PATHS.copy()
+        
+        # Override paths if specified in config
+        if config and "paths" in config:
+            for key, value in config["paths"].items():
+                self.paths[key] = value
+                
+        # Initialize processors
+        self.processors = {
+            "sm20": SM20Processor(),
+            "cdhdr": CDHDRProcessor(),
+            "cdpos": CDPOSProcessor()
+        }
+        
+        # Results tracking
+        self.results = {}
+    
+    def process_input_files(self):
+        """
+        Process all SAP data input files.
+        
+        This is the main entry point for the data preparation stage.
+        It orchestrates the processing of all data sources and 
+        tracks success/failure for each.
+        
+        Returns:
+            bool: True if all processors completed successfully, 
+                  False if any processor failed.
+        """
+        log_section("Starting SAP Audit Data Preparation")
+        
+        # Create input directory if it doesn't exist
+        os.makedirs(self.paths["input_dir"], exist_ok=True)
+        
+        # Reset results
+        self.results = {}
+        
+        # Process each data source
+        for source_type, processor in self.processors.items():
+            input_file = processor.find_input_file()
+            if input_file:
+                log_message(f"Found {source_type.upper()} file: {input_file}")
+                output_file = os.path.join(self.paths["input_dir"], f"{source_type.upper()}.csv")
+                self.results[source_type] = processor.process(input_file, output_file)
+            else:
+                log_message(f"No {source_type.upper()} file found matching pattern", "WARNING")
+                self.results[source_type] = False
+        
+        # Log overall success/failure
+        successful = sum(1 for result in self.results.values() if result)
+        log_message(f"Data preparation completed. {successful} of {len(self.processors)} sources processed successfully.")
+        
+        # List output files
+        log_message("Output files:")
+        for source_type in self.processors.keys():
+            output_file = os.path.join(self.paths["input_dir"], f"{source_type.upper()}.csv")
+            if self.results.get(source_type, False):
+                log_message(f"  {source_type.upper()}: {output_file}")
+        
+        return all(self.results.values())
+    
+    def get_results(self):
+        """
+        Get the processing results.
+        
+        Returns:
+            dict: Dictionary of results for each processor
+        """
+        return self.results.copy()
+
+# =========================================================================
+# MAIN FUNCTION
+# =========================================================================
+
+@handle_exception
 def main():
     """Main function to prepare all SAP data files."""
-    log_message("Starting SAP Audit Data Preparation...")
+    # Create data prep manager
+    manager = DataPrepManager()
     
-    # Create input directory if it doesn't exist
-    os.makedirs(INPUT_DIR, exist_ok=True)
+    # Run data preparation
+    success = manager.process_input_files()
     
-    # Process SM20 security audit log
-    sm20_file = find_latest_file(SM20_PATTERN)
-    if sm20_file:
-        log_message(f"Found SM20 file: {sm20_file}")
-        process_sm20(sm20_file, SM20_OUTPUT_FILE)
-    else:
-        log_message("No SM20 file found matching pattern", "WARNING")
-    
-    # Process CDHDR change document headers
-    cdhdr_file = find_latest_file(CDHDR_PATTERN)
-    if cdhdr_file:
-        log_message(f"Found CDHDR file: {cdhdr_file}")
-        process_cdhdr(cdhdr_file, CDHDR_OUTPUT_FILE)
-    else:
-        log_message("No CDHDR file found matching pattern", "WARNING")
-    
-    # Process CDPOS change document items
-    cdpos_file = find_latest_file(CDPOS_PATTERN)
-    if cdpos_file:
-        log_message(f"Found CDPOS file: {cdpos_file}")
-        process_cdpos(cdpos_file, CDPOS_OUTPUT_FILE)
-    else:
-        log_message("No CDPOS file found matching pattern", "WARNING")
-    
-    log_message("Data preparation completed successfully.")
-    log_message("Output files:")
-    log_message(f"  SM20: {SM20_OUTPUT_FILE}")
-    log_message(f"  CDHDR: {CDHDR_OUTPUT_FILE}")
-    log_message(f"  CDPOS: {CDPOS_OUTPUT_FILE}")
+    return success
 
 if __name__ == "__main__":
     main()

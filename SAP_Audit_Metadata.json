@@ -1,0 +1,12 @@
+{
+  "runs": [
+    {
+      "timestamp": "2025-04-21 17:03:25",
+      "risk_counts": {
+        "Medium": 13604,
+        "Low": 2465,
+        "High": 101,
+        "Critical": 13
+      },
+      "detection_counts": {
+        "BU4": 

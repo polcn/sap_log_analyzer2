@@ -2,6 +2,28 @@
 
 All notable changes to the SAP Log Analyzer will be documented in this file.
 
+## [4.6.0] - May 2025
+
+### Added
+- New `SAPAuditAnalyzer` module for enhanced audit analysis
+- Transaction code descriptions for better report readability
+- Event code descriptions to provide context for security events
+- Reference data files for TCodes, Events, and Tables
+- Flag columns for identifying specific activity types:
+  - Table maintenance activities
+  - High-risk transaction codes with categories
+  - Change activities (insert, update, delete)
+  - Transport-related events
+  - Debugging-related events
+  - Benign activities
+- Support for categorizing audit findings with standardized columns:
+  - Observations - Initial findings from analysis
+  - Questions - Items requiring further clarification
+  - Response - Space for client responses
+  - Conclusion - Final determination on activities
+- Auto-population of conclusions for benign activities with SysAid tickets
+- Color-coded header formats for new analysis columns
+
 ## [4.5.0] - May 2025
 
 ### Added

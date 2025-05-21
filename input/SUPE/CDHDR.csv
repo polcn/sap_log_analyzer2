@@ -1,0 +1,105 @@
+﻿CL.,OBJECT,OBJECT VALUE,DOC.NUMBER,USER,DATE,TIME,TCODE,CHANGE NUMBER,DOC. NO.,FL,CHANGE FLAG FOR APPLICATION OBJECT,L,3-BYTE FIELD,DATA AGING FILTER,SYSAID#,COMMENT / REVIEW,DATETIME
+200,LIEFERUNG,180017030,3237822,FF_PTP,2025-03-10,15:16:30,VL33N,,,,U,E,0,,"#119,447",Activity in log coincides with requested activity,2025-03-10 15:16:30
+200,CHARGE_LM,000000000030003006                          11397,3237826,FF_PTP,2025-03-10,15:17:23,VL33N,,,,U,E,0,,"#119,447",Activity in log coincides with requested activity,2025-03-10 15:17:23
+200,/SCDL/DELIVERY,F18F8A2E0A9F1EDFBFBC896F120C29CB,3237825,FF_PTP,2025-03-10,19:17:23,RFC/SCWM/INB_DLV_SAV,,,,I,E,0,,"#119,447",Activity in log coincides with requested activity,2025-03-10 19:17:23
+200,/SCWM/CHM_QUAN,Guid parent:000D3A0C86271EDAAC81AEDB1A4F98B5,3213361,FF_STP,2025-02-21,12:22:11,/SCWM/CHM_PRF,,,,D,E,0,,#118396,Activity in log coincides with requested activity,2025-02-21 12:22:11
+200,/SCWM/NQUAN_CHD,Guid parent:000D3A0C86271EDAAC81AEDB1A4F98B5,3213362,FF_STP,2025-02-21,12:22:11,/SCWM/CHM_PRF,,,,D,E,1,,#118396,Activity in log coincides with requested activity,2025-02-21 12:22:11
+200,/SCWM/NQUAN_CHD,Guid parent:000D3A0C86271EDAAC81AEDB1A4F98B5,3213363,FF_STP,2025-02-21,12:22:11,/SCWM/CHM_PRF,,,,U,E,1,,#118396,Activity in log coincides with requested activity,2025-02-21 12:22:11
+200,KRED,1005354,3217962,FF_STP,2025-02-25,15:08:36,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:36
+200,KRED,1005330,3217960,FF_STP,2025-02-25,15:08:37,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:37
+200,KRED,1005336,3217959,FF_STP,2025-02-25,15:08:37,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:37
+200,ADRESSE,BP  0000047754,3217973,FF_STP,2025-02-25,15:08:38,MASS,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:38
+200,KRED,1005321,3217963,FF_STP,2025-02-25,15:08:38,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:38
+200,KRED,1005322,3217971,FF_STP,2025-02-25,15:08:38,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:38
+200,ADRESSE,BP  0000052161,3217974,FF_STP,2025-02-25,15:08:40,MASS,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:40
+200,KRED,1005317,3217972,FF_STP,2025-02-25,15:08:40,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:40
+200,KRED,1005314,3217975,FF_STP,2025-02-25,15:08:41,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:41
+200,KRED,1005315,3217964,FF_STP,2025-02-25,15:08:41,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:41
+200,KRED,1005295,3217966,FF_STP,2025-02-25,15:08:42,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:42
+200,KRED,1005305,3217976,FF_STP,2025-02-25,15:08:42,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:42
+200,KRED,1005307,3217965,FF_STP,2025-02-25,15:08:42,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:42
+200,KRED,1005290,3217978,FF_STP,2025-02-25,15:08:43,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:43
+200,KRED,1005293,3217977,FF_STP,2025-02-25,15:08:43,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:43
+200,KRED,1005270,3217980,FF_STP,2025-02-25,15:08:44,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:44
+200,KRED,1005274,3217967,FF_STP,2025-02-25,15:08:44,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:44
+200,KRED,1005288,3217979,FF_STP,2025-02-25,15:08:44,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:44
+200,KRED,1005263,3217981,FF_STP,2025-02-25,15:08:45,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:45
+200,KRED,1005264,3217968,FF_STP,2025-02-25,15:08:45,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:45
+200,KRED,1005194,3217982,FF_STP,2025-02-25,15:08:46,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:46
+200,KRED,1005203,3217969,FF_STP,2025-02-25,15:08:46,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:46
+200,KRED,1005179,3217983,FF_STP,2025-02-25,15:08:47,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:47
+200,KRED,1005188,3217970,FF_STP,2025-02-25,15:08:47,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:47
+200,KRED,1005111,3217991,FF_STP,2025-02-25,15:08:48,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:48
+200,KRED,1005133,3217985,FF_STP,2025-02-25,15:08:48,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:48
+200,KRED,1005138,3217984,FF_STP,2025-02-25,15:08:48,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:48
+200,KRED,1005098,3217992,FF_STP,2025-02-25,15:08:49,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:49
+200,KRED,1005101,3217986,FF_STP,2025-02-25,15:08:49,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:49
+200,KRED,1005002,3217993,FF_STP,2025-02-25,15:08:50,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:50
+200,KRED,1005022,3217987,FF_STP,2025-02-25,15:08:50,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:50
+200,KRED,1004953,3217989,FF_STP,2025-02-25,15:08:51,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:51
+200,KRED,1004960,3217994,FF_STP,2025-02-25,15:08:51,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:51
+200,KRED,1004993,3217988,FF_STP,2025-02-25,15:08:51,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:51
+200,KRED,1004845,3218001,FF_STP,2025-02-25,15:08:52,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:52
+200,KRED,1004878,3217990,FF_STP,2025-02-25,15:08:52,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:52
+200,KRED,1004766,3218002,FF_STP,2025-02-25,15:08:53,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:53
+200,KRED,1004808,3217995,FF_STP,2025-02-25,15:08:53,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:53
+200,KRED,1004649,3217997,FF_STP,2025-02-25,15:08:54,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:54
+200,KRED,1004718,3218003,FF_STP,2025-02-25,15:08:54,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:54
+200,KRED,1004755,3217996,FF_STP,2025-02-25,15:08:54,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:54
+200,KRED,1004625,3217998,FF_STP,2025-02-25,15:08:55,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:55
+200,KRED,1004638,3218004,FF_STP,2025-02-25,15:08:55,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:55
+200,KRED,1004299,3218006,FF_STP,2025-02-25,15:08:56,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:56
+200,KRED,1004391,3218005,FF_STP,2025-02-25,15:08:56,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:56
+200,KRED,1003451,3218008,FF_STP,2025-02-25,15:08:57,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:57
+200,KRED,1004201,3217999,FF_STP,2025-02-25,15:08:57,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:57
+200,KRED,1004283,3218007,FF_STP,2025-02-25,15:08:57,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:57
+200,KRED,1003400,3218009,FF_STP,2025-02-25,15:08:58,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:58
+200,KRED,1003442,3218000,FF_STP,2025-02-25,15:08:58,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:58
+200,KRED,1002326,3218010,FF_STP,2025-02-25,15:08:59,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:59
+200,KRED,1002348,3218011,FF_STP,2025-02-25,15:08:59,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:08:59
+200,KRED,1002200,3218021,FF_STP,2025-02-25,15:09:00,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:00
+200,KRED,1002288,3218012,FF_STP,2025-02-25,15:09:00,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:00
+200,KRED,1002149,3218023,FF_STP,2025-02-25,15:09:01,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:01
+200,KRED,1002166,3218022,FF_STP,2025-02-25,15:09:01,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:01
+200,KRED,1002038,3218024,FF_STP,2025-02-25,15:09:02,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:02
+200,KRED,1002077,3218013,FF_STP,2025-02-25,15:09:02,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:02
+200,KRED,1001410,3218015,FF_STP,2025-02-25,15:09:03,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:03
+200,KRED,1001416,3218025,FF_STP,2025-02-25,15:09:03,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:03
+200,KRED,1002020,3218014,FF_STP,2025-02-25,15:09:03,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:03
+200,KRED,1001408,3218016,FF_STP,2025-02-25,15:09:04,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:04
+200,KRED,1001409,3218026,FF_STP,2025-02-25,15:09:04,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:04
+200,KRED,1001383,3218028,FF_STP,2025-02-25,15:09:05,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:05
+200,KRED,1001407,3218027,FF_STP,2025-02-25,15:09:05,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:05
+200,KRED,1001360,3218030,FF_STP,2025-02-25,15:09:06,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:06
+200,KRED,1001363,3218017,FF_STP,2025-02-25,15:09:06,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:06
+200,KRED,1001370,3218029,FF_STP,2025-02-25,15:09:06,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:06
+200,KRED,1001063,3218031,FF_STP,2025-02-25,15:09:07,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:07
+200,KRED,1001294,3218018,FF_STP,2025-02-25,15:09:07,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:07
+200,KRED,1001016,3218032,FF_STP,2025-02-25,15:09:08,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:08
+200,KRED,1001033,3218019,FF_STP,2025-02-25,15:09:08,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:08
+200,KRED,1000837,3218034,FF_STP,2025-02-25,15:09:09,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:09
+200,KRED,1000857,3218033,FF_STP,2025-02-25,15:09:09,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:09
+200,KRED,1000866,3218020,FF_STP,2025-02-25,15:09:09,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:09
+200,KRED,1000723,3218041,FF_STP,2025-02-25,15:09:10,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:10
+200,KRED,1000779,3218035,FF_STP,2025-02-25,15:09:10,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:10
+200,KRED,1000540,3218042,FF_STP,2025-02-25,15:09:11,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:11
+200,KRED,1000722,3218036,FF_STP,2025-02-25,15:09:11,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:11
+200,ADRESSE,BP  0000026981,3218038,FF_STP,2025-02-25,15:09:12,MASS,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:12
+200,KRED,1000523,3218043,FF_STP,2025-02-25,15:09:12,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:12
+200,KRED,1000533,3218037,FF_STP,2025-02-25,15:09:12,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:12
+200,KRED,1000506,3218044,FF_STP,2025-02-25,15:09:13,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:13
+200,KRED,1000515,3218039,FF_STP,2025-02-25,15:09:13,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:13
+200,KRED,1000447,3218040,FF_STP,2025-02-25,15:09:14,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:14
+200,KRED,1000435,3218051,FF_STP,2025-02-25,15:09:15,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:15
+200,KRED,1000404,3218052,FF_STP,2025-02-25,15:09:16,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:16
+200,KRED,1000268,3218053,FF_STP,2025-02-25,15:09:17,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:17
+200,KRED,1000361,3218045,FF_STP,2025-02-25,15:09:17,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:17
+200,KRED,1000179,3218054,FF_STP,2025-02-25,15:09:18,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:18
+200,KRED,1000204,3218046,FF_STP,2025-02-25,15:09:18,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:18
+200,KRED,1000068,3218055,FF_STP,2025-02-25,15:09:19,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:19
+200,KRED,1000071,3218047,FF_STP,2025-02-25,15:09:19,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:19
+200,KRED,1000049,3218048,FF_STP,2025-02-25,15:09:20,XK02,,,,U,E,0,,"#118,674",Activity in log coincides with requested activity,2025-02-25 15:09:20
+200,LIEFERUNG,180016744,3221491,FF_STP,2025-02-27,09:26:20,VL32N,,,,U,E,0,,"#119,100",Activity in log coincides with requested activity,2025-02-27 09:26:20
+200,CHARGE_LM,000000000030003159                          1008222,3221493,FF_STP,2025-02-27,09:27:40,VL32N,,,,U,E,0,,"#119,100",Activity in log coincides with requested activity,2025-02-27 09:27:40
+200,CHARGE_LM,000000000030003170                          1008222,3221494,FF_STP,2025-02-27,09:27:40,VL32N,,,,U,E,0,,"#119,100",Activity in log coincides with requested activity,2025-02-27 09:27:40
+200,/SCDL/DELIVERY,F18F8A2E0A9F1EEFBDA2E006F55A2470,3221492,FF_STP,2025-02-27,14:27:41,RFC/SCWM/INB_DLV_SAV,,,,I,E,0,,"#119,100",Activity in log coincides with requested activity,2025-02-27 14:27:41

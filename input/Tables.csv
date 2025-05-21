@@ -1,0 +1,54 @@
+Table,Table Description
+USR02,User Password Data
+USR10,User Authorization Profiles
+USR11,User Address
+USR12,User Authorization Values
+USR21,User Parameters
+AGR_1016,Authorization Object Profiles
+AGR_DEFINE,Authorization Groups
+AGR_USERS,User Role Assignment
+USGRP,User Groups
+USGRPT,User Group Texts
+UST12,User Authorization Profiles for Transaction Codes
+DEVACCESS,Development System Access Authorizations
+TOBJ,Authorization Object Definitions
+TOBCT,Authorization Object Field Texts
+TBRG,Transaction Authorization Groups
+TSTC,Transaction Codes
+TSTCT,Transaction Code Texts
+TDEVC,Development Classes (Packages)
+TBDLS,Table Field Display Settings
+TADIR,Repository Object Directory
+TRDIR,Program Metadata
+SEOCLASS,Class Definitions
+SEOBJECT,Object Definitions
+TFDIR,Function Module Directory
+DD02L,Table Definitions
+DD02T,Table Texts
+DD03L,Table Fields
+DD08L,Foreign Key Definitions
+ENLFDIR,Transport Layer Definitions
+E070,Transport Requests
+E071,Transport Request Objects
+E071K,Transport Request Components
+MARA,Material Master
+MARC,Material Plant Data
+MAKT,Material Descriptions
+EKKO,Purchase Order Headers
+EKPO,Purchase Order Items
+VBAK,Sales Document Header
+VBAP,Sales Document Items
+VBAK,Sales Document Headers
+VBRK,Billing Document Headers
+VBRP,Billing Document Items
+BKPF,Accounting Document Headers
+BSEG,Accounting Document Line Items
+BSIK,Vendor Open Items
+BSID,Customer Open Items
+CDHDR,Change Document Headers
+CDPOS,Change Document Items
+T001,Company Codes
+T001W,Plants
+T005,Countries
+T005T,Country Texts
+T001A,Sales Organizations

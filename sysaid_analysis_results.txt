@@ -1,0 +1,1221 @@
+[2025-05-19 16:09:05] INFO: Starting Comprehensive SysAid Analysis
+[2025-05-19 16:09:05] INFO: Found 4 Excel files and 3 CSV files
+[2025-05-19 16:09:05] INFO: 
+================================================================================
+[2025-05-19 16:09:05] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\FF_CDPOS_Mar.xlsx
+[2025-05-19 16:09:06] INFO: Successfully read Excel file with 8 rows and 16 columns
+[2025-05-19 16:09:06] INFO: No potential SysAid columns found in C:\Users\craig\OneDrive\Documents\Python\input\FF_CDPOS_Mar.xlsx
+[2025-05-19 16:09:06] INFO: Available columns:
+[2025-05-19 16:09:06] INFO:     Cl.
+[2025-05-19 16:09:06] INFO:   Object        
+[2025-05-19 16:09:06] INFO:   Object Value                                     
+[2025-05-19 16:09:06] INFO:   Doc.Number
+[2025-05-19 16:09:06] INFO:   Table Name      
+[2025-05-19 16:09:06] INFO:   Table Key                                           
+[2025-05-19 16:09:06] INFO:   Field Name
+[2025-05-19 16:09:06] INFO:   Change Indicator
+[2025-05-19 16:09:06] INFO:   Text flag
+[2025-05-19 16:09:06] INFO:   Unit
+[2025-05-19 16:09:06] INFO:   Unit.1
+[2025-05-19 16:09:06] INFO:   CUKY
+[2025-05-19 16:09:06] INFO:   CUKY.1
+[2025-05-19 16:09:06] INFO:   New Value
+[2025-05-19 16:09:06] INFO:   Old Value
+[2025-05-19 16:09:06] INFO:   Data Aging Filter
+[2025-05-19 16:09:06] INFO: 
+================================================================================
+[2025-05-19 16:09:06] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\Mar_CDHDR_Sys.xlsx
+[2025-05-19 16:09:06] INFO: Successfully read Excel file with 4 rows and 17 columns
+[2025-05-19 16:09:06] INFO: Found 1 potential SysAid columns: SySAid#
+[2025-05-19 16:09:06] INFO: 
+Analyzing column: SySAid#
+[2025-05-19 16:09:06] INFO: Non-empty values: 4 out of 4 rows (100.00%)
+[2025-05-19 16:09:06] INFO: Found 2 unique non-empty SysAid values out of 4 total
+[2025-05-19 16:09:06] INFO: SysAid value formats:
+[2025-05-19 16:09:06] INFO:   hash_and_commas: 2 values
+[2025-05-19 16:09:06] INFO: After standardization: 2 unique values
+[2025-05-19 16:09:06] INFO: Standardization examples:
+[2025-05-19 16:09:06] INFO:   '#120,568' -> '120568'
+[2025-05-19 16:09:06] INFO:   '#119,447' -> '119447'
+[2025-05-19 16:09:06] INFO: 
+Top values by frequency:
+[2025-05-19 16:09:06] INFO:   '#119,447': 3 rows
+[2025-05-19 16:09:06] INFO:   '#120,568': 1 rows
+[2025-05-19 16:09:06] INFO: 
+Sample rows with SysAid values:
+[2025-05-19 16:09:06] INFO:   SysAid: '#119,447' - Sample data: {'  Cl.': 200, 'Object        ': 'LIEFERUNG     ', 'Object Value                                     ': 180017030, 'Doc.Number': 3237822, 'User  ': 'FF_PTP'}
+[2025-05-19 16:09:06] INFO:   SysAid: '#119,447' - Sample data: {'  Cl.': 200, 'Object        ': '/SCDL/DELIVERY', 'Object Value                                     ': 'F18F8A2E0A9F1EDFBFBC896F120C29CB                 ', 'Doc.Number': 3237825, 'User  ': 'FF_PTP'}
+[2025-05-19 16:09:06] INFO:   SysAid: '#119,447' - Sample data: {'  Cl.': 200, 'Object        ': 'CHARGE_LM     ', 'Object Value                                     ': '000000000030003006                          11397', 'Doc.Number': 3237826, 'User  ': 'FF_PTP'}
+[2025-05-19 16:09:06] INFO:   SysAid: '#120,568' - Sample data: {'  Cl.': 200, 'Object        ': 'LIEFERUNG     ', 'Object Value                                     ': 180016975, 'Doc.Number': 3306194, 'User  ': 'FF_PTP'}
+[2025-05-19 16:09:06] INFO: 
+================================================================================
+[2025-05-19 16:09:06] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\Mar_SM20_Sys.xlsx
+[2025-05-19 16:09:07] INFO: Successfully read Excel file with 15660 rows and 18 columns
+[2025-05-19 16:09:07] INFO: Found 1 potential SysAid columns: SysAid#
+[2025-05-19 16:09:07] INFO: 
+Analyzing column: SysAid#
+[2025-05-19 16:09:07] INFO: Non-empty values: 50 out of 15660 rows (0.32%)
+[2025-05-19 16:09:07] INFO: Found 3 unique non-empty SysAid values out of 50 total
+[2025-05-19 16:09:07] INFO: SysAid value formats:
+[2025-05-19 16:09:07] INFO:   hash_and_commas: 3 values
+[2025-05-19 16:09:07] INFO: After standardization: 3 unique values
+[2025-05-19 16:09:07] INFO: Standardization examples:
+[2025-05-19 16:09:07] INFO:   '#120,568' -> '120568'
+[2025-05-19 16:09:07] INFO:   '#120,245' -> '120245'
+[2025-05-19 16:09:07] INFO:   '#119,447' -> '119447'
+[2025-05-19 16:09:07] INFO: 
+Top values by frequency:
+[2025-05-19 16:09:07] INFO:   '#119,447': 24 rows
+[2025-05-19 16:09:07] INFO:   '#120,568': 14 rows
+[2025-05-19 16:09:07] INFO:   '#120,245': 12 rows
+[2025-05-19 16:09:07] INFO: 
+Sample rows with SysAid values:
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,245' - Sample data: {'SAP System': '   S4P    ', 'AS Instance        ': 'vhcnss4pci_S4P_00  ', 'Date      ': Timestamp('2025-03-28 00:00:00'), 'Time    ': datetime.time(12, 36, 14), 'Cl.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,568' - Sample data: {'SAP System': '   S4P    ', 'AS Instance        ': 'vhcnss4pci_S4P_00  ', 'Date      ': Timestamp('2025-04-11 00:00:00'), 'Time    ': datetime.time(10, 19, 43), 'Cl.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,245' - Sample data: {'SAP System': '   S4P    ', 'AS Instance        ': 'vhcnss4pci_S4P_00  ', 'Date      ': Timestamp('2025-03-28 00:00:00'), 'Time    ': datetime.time(9, 5, 48), 'Cl.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'SAP System': '   S4P    ', 'AS Instance        ': 'vhcnss4pci_S4P_00  ', 'Date      ': Timestamp('2025-03-10 00:00:00'), 'Time    ': datetime.time(15, 15, 5), 'Cl.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,245' - Sample data: {'SAP System': '   S4P    ', 'AS Instance        ': 'vhcnss4pci_S4P_00  ', 'Date      ': Timestamp('2025-03-28 00:00:00'), 'Time    ': datetime.time(9, 0, 20), 'Cl.': 200}
+[2025-05-19 16:09:07] INFO: 
+================================================================================
+[2025-05-19 16:09:07] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\SysAid.xlsx
+[2025-05-19 16:09:07] INFO: Successfully read Excel file with 455 rows and 13 columns
+[2025-05-19 16:09:07] INFO: Found 2 potential SysAid columns: Ticket, Description
+[2025-05-19 16:09:07] INFO: 
+Analyzing column: Ticket
+[2025-05-19 16:09:07] INFO: Non-empty values: 455 out of 455 rows (100.00%)
+[2025-05-19 16:09:07] INFO: Found 455 unique non-empty SysAid values out of 455 total
+[2025-05-19 16:09:07] INFO: SysAid value formats:
+[2025-05-19 16:09:07] INFO:   numeric_only: 455 values
+[2025-05-19 16:09:07] INFO: After standardization: 455 unique values
+[2025-05-19 16:09:07] INFO: Standardization examples:
+[2025-05-19 16:09:07] INFO: 
+Top values by frequency:
+[2025-05-19 16:09:07] INFO:   '120698': 1 rows
+[2025-05-19 16:09:07] INFO:   '114484': 1 rows
+[2025-05-19 16:09:07] INFO:   '114488': 1 rows
+[2025-05-19 16:09:07] INFO:   '114489': 1 rows
+[2025-05-19 16:09:07] INFO:   '114496': 1 rows
+[2025-05-19 16:09:07] INFO:   '114515': 1 rows
+[2025-05-19 16:09:07] INFO:   '114519': 1 rows
+[2025-05-19 16:09:07] INFO:   '120471': 1 rows
+[2025-05-19 16:09:07] INFO:   '120469': 1 rows
+[2025-05-19 16:09:07] INFO:   '120467': 1 rows
+[2025-05-19 16:09:07] INFO:   '120466': 1 rows
+[2025-05-19 16:09:07] INFO:   '120464': 1 rows
+[2025-05-19 16:09:07] INFO:   '120450': 1 rows
+[2025-05-19 16:09:07] INFO:   '120416': 1 rows
+[2025-05-19 16:09:07] INFO:   '120415': 1 rows
+[2025-05-19 16:09:07] INFO: 
+Sample rows with SysAid values:
+[2025-05-19 16:09:07] INFO:   SysAid: '117547' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Closed', 'Ticket': 117547, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: '117506' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Waiting for response', 'Ticket': 117506, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: '119267' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Closed', 'Ticket': 119267, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: '120416' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Closed', 'Ticket': 120416, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: '116992' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Verified closed', 'Ticket': 116992, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO: 
+Analyzing column: Description
+[2025-05-19 16:09:07] INFO: Non-empty values: 455 out of 455 rows (100.00%)
+[2025-05-19 16:09:07] INFO: Found 455 unique non-empty SysAid values out of 455 total
+[2025-05-19 16:09:07] INFO: SysAid value formats:
+[2025-05-19 16:09:07] INFO:   other: 455 values
+[2025-05-19 16:09:07] INFO: After standardization: 455 unique values
+[2025-05-19 16:09:07] INFO: Standardization examples:
+[2025-05-19 16:09:07] INFO:   'Good morning,
+
+Jason Fulop will be joining Cronos on April 7th and will need SAP access. I have reached out to their manager Bruce Harpell and have recieved approval on the roles to be mirrored as Jessica Thompson. I have attached Bruce's approval to this ticket' -> 'Good morning
+
+Jason Fulop will be joining Cronos on April 7th and will need SAP access. I have reached out to their manager Bruce Harpell and have recieved approval on the roles to be mirrored as Jessica Thompson. I have attached Bruce's approval to this ticket'
+[2025-05-19 16:09:07] INFO:   'Hoping to be able to have access to assist Production Team Lead in printing Pick Lists - every time I have tried, I get an error' -> 'Hoping to be able to have access to assist Production Team Lead in printing Pick Lists - every time I have tried I get an error'
+[2025-05-19 16:09:07] INFO:   'As of Oct, 31 2024 we no longer use the BlackLine / SAP Integration.  Can stop the daily jobs for BlackLine (SAP) and can stop the daily reporting for BlackLine (SAP)' -> 'As of Oct 31 2024 we no longer use the BlackLine / SAP Integration.  Can stop the daily jobs for BlackLine (SAP) and can stop the daily reporting for BlackLine (SAP)'
+[2025-05-19 16:09:07] INFO:   'As part of ITGC.11 SAP User Access Review, for the following 13 users, FULL Role Removal and Move Users to Termination Group
+
+AVALOSA     
+BINUN       
+DESAID      
+FIELDI      
+GEORGEJ     
+GOGARIV     
+KAURSA      
+MCGREGORN   
+MURPHYJ     
+SIBYK       
+STOLLERG    
+SZEWCZYKM   
+WESTD
+
+See attached spreadsheet for reference.' -> 'As part of ITGC.11 SAP User Access Review for the following 13 users FULL Role Removal and Move Users to Termination Group
+
+AVALOSA     
+BINUN       
+DESAID      
+FIELDI      
+GEORGEJ     
+GOGARIV     
+KAURSA      
+MCGREGORN   
+MURPHYJ     
+SIBYK       
+STOLLERG    
+SZEWCZYKM   
+WESTD
+
+See attached spreadsheet for reference.'
+[2025-05-19 16:09:07] INFO:   'Hi,
+
+Can you please run a report to show all the changes to the Vendor Master Data by running the t-code S_ALR_87012089 via SAP GUI from 1/1/2024-12/31/2024? Please include the following in the report for fields: the date of the change, vendor name, vendor number, field that was changed, who changed it, and the prior/updated field texts.' -> 'Hi
+
+Can you please run a report to show all the changes to the Vendor Master Data by running the t-code S_ALR_87012089 via SAP GUI from 1/1/2024-12/31/2024? Please include the following in the report for fields: the date of the change vendor name vendor number field that was changed who changed it and the prior/updated field texts.'
+[2025-05-19 16:09:07] INFO:   'Please remove SAP Access for Raja Butani (BUTANIR), as he is no longer employed with Cronos.  
+
+Please remove all roles and move to termination group.' -> 'Please remove SAP Access for Raja Butani (BUTANIR) as he is no longer employed with Cronos.  
+
+Please remove all roles and move to termination group.'
+[2025-05-19 16:09:07] INFO:   'Please refer to Ticket 110,324
+
+Hi,
+
+We are still seeing problems with the bank G/L account set ups for Bridge Bank. There are 2 issues. The set-up issue is creating many additional entries and reclasses. I will send the ticket as soon as it creates. Help is appreciated as this is affecting our close.
+
+
+  1.  The payments are not clearing as they do in the Canada company accounts.
+  2.  We cannot use Clear G/L Accounts with the Bridge Bank accounts in SAP, while we can use this with the BMO accounts.
+
+Thank you,
+
+[cid:image006.png@01DAB695.F7795FC0]
+
+Robin Pollachek
+Accounts Payable Supervisor
+
+Mobile: +1.310.487.2571
+Email:  robin.pollachek@thecronosgroup.com<mailto:robin.pollachek@thecronosgroup.com>
+
+[cid:image002.png@01DAB67A.F85DE7A0]<http://thecronosgroup.com/>
+Cronos Group
+111 Peter Street, Suite 300
+Toronto, Ontario M5V 2H1
+TheCronosGroup.com<http://thecronosgroup.com/>
+NASDAQ: CRON  |  TSX: CRON
+Confidentiality Notice: The information contained in this email may be confidential and legally privileged. It is intended only for use of the individual named. If you are not the intended recipient, you are hereby notified that the disclosure, copying, distribution, or taking of any action in regards to the contents of this email – except its direct delivery to the intended recipient – is strictly prohibited. If you have received this email in error, please notify the sender immediately and delete from your system.
+
+From: Karen Gibson <karen.gibson@thecronosgroup.com>
+Sent: Tuesday, June 4, 2024 12:46 PM
+To: Andrew MacDonald <andrew.macdonald@thecronosgroup.com>
+Cc: Accounts Payable <ap@thecronosgroup.com>
+Subject: 1710 Bank GL account Breakdown
+
+Good afternoon Andrew,
+
+Please see below the explanation of the 1710 accounts..
+
+
+For the   $1997.50 in 11045120 Wire out  and in  11045210 EFT IN this was a Manual payment that Treasury made from 1710 that was supposed to be wired from 1715. So that is the correction.
+
+The wire payment of $ 394.43 to First Advantage on May 30 ca...' -> 'Please refer to Ticket 110324
+
+Hi
+
+We are still seeing problems with the bank G/L account set ups for Bridge Bank. There are 2 issues. The set-up issue is creating many additional entries and reclasses. I will send the ticket as soon as it creates. Help is appreciated as this is affecting our close.
+
+
+  1.  The payments are not clearing as they do in the Canada company accounts.
+  2.  We cannot use Clear G/L Accounts with the Bridge Bank accounts in SAP while we can use this with the BMO accounts.
+
+Thank you
+
+[cid:image006.png@01DAB695.F7795FC0]
+
+Robin Pollachek
+Accounts Payable Supervisor
+
+Mobile: +1.310.487.2571
+Email:  robin.pollachek@thecronosgroup.com<mailto:robin.pollachek@thecronosgroup.com>
+
+[cid:image002.png@01DAB67A.F85DE7A0]<http://thecronosgroup.com/>
+Cronos Group
+111 Peter Street Suite 300
+Toronto Ontario M5V 2H1
+TheCronosGroup.com<http://thecronosgroup.com/>
+NASDAQ: CRON  |  TSX: CRON
+Confidentiality Notice: The information contained in this email may be confidential and legally privileged. It is intended only for use of the individual named. If you are not the intended recipient you are hereby notified that the disclosure copying distribution or taking of any action in regards to the contents of this email – except its direct delivery to the intended recipient – is strictly prohibited. If you have received this email in error please notify the sender immediately and delete from your system.
+
+From: Karen Gibson <karen.gibson@thecronosgroup.com>
+Sent: Tuesday June 4 2024 12:46 PM
+To: Andrew MacDonald <andrew.macdonald@thecronosgroup.com>
+Cc: Accounts Payable <ap@thecronosgroup.com>
+Subject: 1710 Bank GL account Breakdown
+
+Good afternoon Andrew
+
+Please see below the explanation of the 1710 accounts..
+
+
+For the   $1997.50 in 11045120 Wire out  and in  11045210 EFT IN this was a Manual payment that Treasury made from 1710 that was supposed to be wired from 1715. So that is the correction.
+
+The wire payment of $ 394.43 to First Advantage on May 30 ca...'
+[2025-05-19 16:09:07] INFO:   'Cash App - Payments not posted for Jan 17th, 20th and 21st in SAP.   We need the payments posted to close January .
+
+AP and AR having the same problem.
+
+Thanks' -> 'Cash App - Payments not posted for Jan 17th 20th and 21st in SAP.   We need the payments posted to close January .
+
+AP and AR having the same problem.
+
+Thanks'
+[2025-05-19 16:09:07] INFO:   'Good afternoon,
+
+It has been requested as per ticket 119575 that we on-board consultant Tom Carruth. Please confirm with Bob Harris and Jason Waltho for roles and access levels required within SAP' -> 'Good afternoon
+
+It has been requested as per ticket 119575 that we on-board consultant Tom Carruth. Please confirm with Bob Harris and Jason Waltho for roles and access levels required within SAP'
+[2025-05-19 16:09:07] INFO:   'I would like to discuss how we can improve GrowCo's  billing procedures to limit month end AR/AP discrepancies between PNP and GrowCo.
+Thanks,
+
+Parinaz' -> 'I would like to discuss how we can improve GrowCo's  billing procedures to limit month end AR/AP discrepancies between PNP and GrowCo.
+Thanks
+
+Parinaz'
+[2025-05-19 16:09:07] INFO:   (... and 445 more)
+[2025-05-19 16:09:07] INFO: 
+Top values by frequency:
+[2025-05-19 16:09:07] INFO:   'Submitting for tracking.
+
+Michaela has joined Cronos and will need SAP access. It has been asked on the ONB ticket (120638) that they have SAP access similar to Artem Gavrylyshyn. The hiring manager has approved the roles and I have attached the managers approval email to this ticket': 1 rows
+[2025-05-19 16:09:07] INFO:   'SAP - Orders going on hold when the customer has the credit for the order.   Need to see what the reason is for this.
+
+Have a great day and thanks ahead of time.
+
+': 1 rows
+[2025-05-19 16:09:07] INFO:   'SAP - Email address update for # 1005428 Northern Green.  Please take off Farah Saeed for the invoice automation for sending out the invoice.   No longer with the company.  
+
+Thanks for your help and time.   See attached email.
+
+Have a great night.
+
+Lisa': 1 rows
+[2025-05-19 16:09:07] INFO:   'SAP - Email address update # 1005570 for Vertical Pharma Resources.  Make sure to have to::::
+
+If in future you could kindly send invoices to @Accounts Payable and @Mohsin Shaikh directly that would be great, I’m going off on maternity leave in a few weeks and dint want the invoices to get missed.
+
+Many thanks,
+
+Clare
+
+See email below.
+': 1 rows
+[2025-05-19 16:09:07] INFO:   'when attempting to download and upload from this app to make mass changes we receive a configuration error "Unable to find configuration data for EXL_OPS_PIR.Please contact your business process configuration expert.".
+
+looking for a solution to either get this download and upload (without any issues), or alternative have another way to make mass changes to purchasing info records, specifically looking at pricing adjustments.
+': 1 rows
+[2025-05-19 16:09:07] INFO:   'Request to replace James Holm with Anna Shlimak and set limit as below, adjust Mike's too.
+
+Jason Waltho                     Senior Manager Active  0-13K                 0-13K in alignment 
+Laurie Kniese                     Head of IT          Active  13,000,01-325K 0-325K in alignment 
+Anna Shlimak                    CSO                 Active  325,000,01-2.6M 0-2.6M in alignment 
+Mike Gorenstein            CEO                  Active  2,600,000.01-26M 0-26M  in alignment 
+': 1 rows
+[2025-05-19 16:09:07] INFO:   'Work order was closed with 7601 units instead of 7610 in error.
+Work Order: 1020248
+Lot: 0000018966
+work order reversal s required to fix the quantity issue in SAP.': 1 rows
+[2025-05-19 16:09:07] INFO:   'Hi- I need password reset for test environment. Thanks,
+
+Pari': 1 rows
+[2025-05-19 16:09:07] INFO:   'Hi- I need to post JE for month end. Can you please look into this error as we need to close March sales today.
+Thanks,
+
+Pari': 1 rows
+[2025-05-19 16:09:07] INFO:   'Run SM20 Log for All Use for Mar 2025 with NO restrictions.  Because of file size, may have to run it week by week.': 1 rows
+[2025-05-19 16:09:07] INFO:   'Please run March 2025 ITGC Reports on April 11th - ITGC.13 (FFID), ITGC.14 (Super User), ITGC.25 (Debug), & ITGC.53 (CDHDR)
+
+Make sure reports include up till April 10, 2025': 1 rows
+[2025-05-19 16:09:07] INFO:   'Hello,
+Could you please monitor the jobs for April 2025?
+Thanks,
+Danny': 1 rows
+[2025-05-19 16:09:07] INFO:   'All, please ensure Danny Kisliansky has SAP access. For the time being, his account should be modeled after what Alan had previously.': 1 rows
+[2025-05-19 16:09:07] INFO:   'Submitting for tracking. Brent has left Cronos Group. His SAP access has been terminated and roles have been removed.': 1 rows
+[2025-05-19 16:09:07] INFO:   'Please remove the following applications from Jennifer Hooiveld as she no longer resides within the QA department effective April 1st.
+
+Z_BR_QUALITY_MANAGER_D_CA 
+Z_BR_QUALITY_PLANNER_D_CA 
+Z_BR_QUALITY_TECHNICIAN_D_CA 
+': 1 rows
+[2025-05-19 16:09:07] INFO: 
+Sample rows with SysAid values:
+[2025-05-19 16:09:07] INFO:   SysAid: 'Hi,
+
+I was unsure where to file this ticket, so doing so here since this is associated with SAP requests - I would like to request access to the SE80 code for myself and the following users:
+
+Shivani Durve
+Aman Kumar
+
+Please let me know if there is anything else needed from me. Thanks!
+
+Rob' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Verified closed', 'Ticket': 114740, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: 'Hello,
+
+We need to come up with a rule in SAP that does not allow entities other than 2920 (PNP) to hit COGS cost centers as part of journal entries.
+
+Please see attached listing of cost centers that need to be disallowed for entities that are not 2920.' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Verified closed', 'Ticket': 116100, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: 'Hello
+I am getting an error when trying a Post Goods Reciept against PO 4500010647.
+See attached screen shot
+
+[cid:image001.png@01DBA535.E26D3860]
+
+
+Dirk Nielsen
+Facilities Maintenance Manager
+
+Mobile: 437-221-3046
+Email: dirk.nielsen@thecronosgroup.com<mailto:dirk.nielsen@thecronosgroup.com>
+TheCronosGroup.com NASDAQ: CRON | TSX: CRON
+
+Confidentiality Notice: The information contained in this email may be confidential and legally privileged. It is intended only for use of the individual named. If you are not the intended recipient, you are hereby notified that the disclosure, copying, distribution, or taking of any action in regards to the contents of this email – except its direct delivery to the intended recipient – is strictly prohibited. If you have received this email in error, please notify the sender immediately and delete from your system.
+
+' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'User Responded', 'Ticket': 120542, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: 'Please Run ITGC.53 CDHDR Reports for SAP ALL/NEW and Debug for 2024' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Verified closed', 'Ticket': 117374, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO:   SysAid: 'requires access to SAP for work
+please copy Artem Gavrylyshyn's (GAVRYLYSHYNA) profile' - Sample data: {'Service Record Type': 'Incident', 'Unnamed: 1': nan, 'Status': 'Verified closed', 'Ticket': 117776, 'Category': 'IS Systems Software'}
+[2025-05-19 16:09:07] INFO: 
+================================================================================
+[2025-05-19 16:09:07] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\CDHDR.csv
+[2025-05-19 16:09:07] INFO: Successfully read CSV file with 4 rows and 24 columns
+[2025-05-19 16:09:07] INFO: Found 1 potential SysAid columns: SYSAID#
+[2025-05-19 16:09:07] INFO: 
+Analyzing column: SYSAID#
+[2025-05-19 16:09:07] INFO: Non-empty values: 4 out of 4 rows (100.00%)
+[2025-05-19 16:09:07] INFO: Found 2 unique non-empty SysAid values out of 4 total
+[2025-05-19 16:09:07] INFO: SysAid value formats:
+[2025-05-19 16:09:07] INFO:   hash_and_commas: 2 values
+[2025-05-19 16:09:07] INFO: After standardization: 2 unique values
+[2025-05-19 16:09:07] INFO: Standardization examples:
+[2025-05-19 16:09:07] INFO:   '#120,568' -> '120568'
+[2025-05-19 16:09:07] INFO:   '#119,447' -> '119447'
+[2025-05-19 16:09:07] INFO: 
+Top values by frequency:
+[2025-05-19 16:09:07] INFO:   '#119,447': 3 rows
+[2025-05-19 16:09:07] INFO:   '#120,568': 1 rows
+[2025-05-19 16:09:07] INFO: 
+Sample rows with SysAid values:
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'  CL.': 200, 'OBJECT        ': 'LIEFERUNG', 'OBJECT VALUE                                     ': '180017030', 'DOC.NUMBER': 3237822, 'USER  ': 'FF_PTP'}
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,568' - Sample data: {'  CL.': 200, 'OBJECT        ': 'LIEFERUNG', 'OBJECT VALUE                                     ': '180016975', 'DOC.NUMBER': 3306194, 'USER  ': 'FF_PTP'}
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'  CL.': 200, 'OBJECT        ': 'CHARGE_LM', 'OBJECT VALUE                                     ': '000000000030003006                          11397', 'DOC.NUMBER': 3237826, 'USER  ': 'FF_PTP'}
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'  CL.': 200, 'OBJECT        ': '/SCDL/DELIVERY', 'OBJECT VALUE                                     ': 'F18F8A2E0A9F1EDFBFBC896F120C29CB', 'DOC.NUMBER': 3237825, 'USER  ': 'FF_PTP'}
+[2025-05-19 16:09:07] INFO: 
+================================================================================
+[2025-05-19 16:09:07] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\CDPOS.csv
+[2025-05-19 16:09:07] INFO: Successfully read CSV file with 8 rows and 18 columns
+[2025-05-19 16:09:07] INFO: No potential SysAid columns found in C:\Users\craig\OneDrive\Documents\Python\input\CDPOS.csv
+[2025-05-19 16:09:07] INFO: Available columns:
+[2025-05-19 16:09:07] INFO:     CL.
+[2025-05-19 16:09:07] INFO:   OBJECT        
+[2025-05-19 16:09:07] INFO:   OBJECT VALUE                                     
+[2025-05-19 16:09:07] INFO:   DOC.NUMBER
+[2025-05-19 16:09:07] INFO:   TABLE NAME      
+[2025-05-19 16:09:07] INFO:   TABLE KEY                                           
+[2025-05-19 16:09:07] INFO:   FIELD NAME
+[2025-05-19 16:09:07] INFO:   CHANGE INDICATOR
+[2025-05-19 16:09:07] INFO:   TEXT FLAG
+[2025-05-19 16:09:07] INFO:   UNIT
+[2025-05-19 16:09:07] INFO:   UNIT.1
+[2025-05-19 16:09:07] INFO:   CUKY
+[2025-05-19 16:09:07] INFO:   CUKY.1
+[2025-05-19 16:09:07] INFO:   NEW VALUE
+[2025-05-19 16:09:07] INFO:   OLD VALUE
+[2025-05-19 16:09:07] INFO:   DATA AGING FILTER
+[2025-05-19 16:09:07] INFO:   TABLE NAME
+[2025-05-19 16:09:07] INFO:   TABLE KEY
+[2025-05-19 16:09:07] INFO: 
+================================================================================
+[2025-05-19 16:09:07] INFO: Analyzing file: C:\Users\craig\OneDrive\Documents\Python\input\SM20.csv
+[2025-05-19 16:09:07] INFO: Successfully read CSV file with 15660 rows and 19 columns
+[2025-05-19 16:09:07] INFO: Found 1 potential SysAid columns: SYSAID#
+[2025-05-19 16:09:07] INFO: 
+Analyzing column: SYSAID#
+[2025-05-19 16:09:07] INFO: Non-empty values: 50 out of 15660 rows (0.32%)
+[2025-05-19 16:09:07] INFO: Found 3 unique non-empty SysAid values out of 50 total
+[2025-05-19 16:09:07] INFO: SysAid value formats:
+[2025-05-19 16:09:07] INFO:   hash_and_commas: 3 values
+[2025-05-19 16:09:07] INFO: After standardization: 3 unique values
+[2025-05-19 16:09:07] INFO: Standardization examples:
+[2025-05-19 16:09:07] INFO:   '#120,568' -> '120568'
+[2025-05-19 16:09:07] INFO:   '#120,245' -> '120245'
+[2025-05-19 16:09:07] INFO:   '#119,447' -> '119447'
+[2025-05-19 16:09:07] INFO: 
+Top values by frequency:
+[2025-05-19 16:09:07] INFO:   '#119,447': 24 rows
+[2025-05-19 16:09:07] INFO:   '#120,568': 14 rows
+[2025-05-19 16:09:07] INFO:   '#120,245': 12 rows
+[2025-05-19 16:09:07] INFO: 
+Sample rows with SysAid values:
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'SAP SYSTEM': 'S4P', 'AS INSTANCE': 'vhcnss4pci_S4P_00', 'DATE': '2025-03-10', 'TIME': '15:12:42', 'CL.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,568' - Sample data: {'SAP SYSTEM': 'S4P', 'AS INSTANCE': 'vhcnss4pci_S4P_00', 'DATE': '2025-04-11', 'TIME': '10:14:38', 'CL.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'SAP SYSTEM': 'S4P', 'AS INSTANCE': 'vhcnss4pci_S4P_00', 'DATE': '2025-03-10', 'TIME': '15:17:52', 'CL.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#119,447' - Sample data: {'SAP SYSTEM': 'S4P', 'AS INSTANCE': 'vhcnss4pci_S4P_00', 'DATE': '2025-03-10', 'TIME': '11:55:55', 'CL.': 200}
+[2025-05-19 16:09:07] INFO:   SysAid: '#120,568' - Sample data: {'SAP SYSTEM': 'S4P', 'AS INSTANCE': 'vhcnss4pci_S4P_00', 'DATE': '2025-04-11', 'TIME': '10:16:30', 'CL.': 200}
+[2025-05-19 16:09:07] INFO: 
+================================================================================
+[2025-05-19 16:09:07] INFO: OVERALL ANALYSIS SUMMARY
+[2025-05-19 16:09:07] INFO: ================================================================================
+[2025-05-19 16:09:07] INFO: Total unique SysAid values across all files: 913
+[2025-05-19 16:09:07] INFO: Total unique standardized SysAid values: 910
+[2025-05-19 16:09:07] INFO: 
+All unique standardized SysAid values:
+[2025-05-19 16:09:07] INFO:   1. 1. Please provide the report of users with access to n/scwm/mat1 within the EWM module. Please provide the screenshots showing the steps followed to obtain the report showing time stamp and system date.
+
+2. Please provide the report of users with access to spro /scwm/img /scwm/pi_process scwm/pi_countlist within the EWM module and IM module. Please provide the screenshots showing the steps followed to obtain the report showing time stamp and system date.
+
+3. Please provide the report RSSCD100 through SE38 for the period between Jan 1 2024 to to 30/09/2024. Please provide the screenshots showing the steps followed to obtain the report showing time stamp and system date.
+[2025-05-19 16:09:07] INFO:   2. 114484
+[2025-05-19 16:09:07] INFO:   3. 114488
+[2025-05-19 16:09:07] INFO:   4. 114489
+[2025-05-19 16:09:07] INFO:   5. 114496
+[2025-05-19 16:09:07] INFO:   6. 114515
+[2025-05-19 16:09:07] INFO:   7. 114519
+[2025-05-19 16:09:07] INFO:   8. 114638
+[2025-05-19 16:09:07] INFO:   9. 114655
+[2025-05-19 16:09:07] INFO:   10. 114733
+[2025-05-19 16:09:07] INFO:   11. 114740
+[2025-05-19 16:09:07] INFO:   12. 114749
+[2025-05-19 16:09:07] INFO:   13. 114761
+[2025-05-19 16:09:07] INFO:   14. 114808
+[2025-05-19 16:09:07] INFO:   15. 114809
+[2025-05-19 16:09:07] INFO:   16. 114858
+[2025-05-19 16:09:07] INFO:   17. 114864
+[2025-05-19 16:09:07] INFO:   18. 114948
+[2025-05-19 16:09:07] INFO:   19. 114952
+[2025-05-19 16:09:07] INFO:   20. 114953
+[2025-05-19 16:09:07] INFO:   21. 114983
+[2025-05-19 16:09:07] INFO:   22. 114986
+[2025-05-19 16:09:07] INFO:   23. 115002
+[2025-05-19 16:09:07] INFO:   24. 115034
+[2025-05-19 16:09:07] INFO:   25. 115038
+[2025-05-19 16:09:07] INFO:   26. 115043
+[2025-05-19 16:09:07] INFO:   27. 115044
+[2025-05-19 16:09:07] INFO:   28. 115081
+[2025-05-19 16:09:07] INFO:   29. 115152
+[2025-05-19 16:09:07] INFO:   30. 115163
+[2025-05-19 16:09:07] INFO:   31. 115175
+[2025-05-19 16:09:07] INFO:   32. 115196
+[2025-05-19 16:09:07] INFO:   33. 115242
+[2025-05-19 16:09:07] INFO:   34. 115251
+[2025-05-19 16:09:07] INFO:   35. 115265
+[2025-05-19 16:09:07] INFO:   36. 115267
+[2025-05-19 16:09:07] INFO:   37. 115284
+[2025-05-19 16:09:07] INFO:   38. 115318
+[2025-05-19 16:09:07] INFO:   39. 115319
+[2025-05-19 16:09:07] INFO:   40. 115321
+[2025-05-19 16:09:07] INFO:   41. 115334
+[2025-05-19 16:09:07] INFO:   42. 115345
+[2025-05-19 16:09:07] INFO:   43. 115381
+[2025-05-19 16:09:07] INFO:   44. 115388
+[2025-05-19 16:09:07] INFO:   45. 115406
+[2025-05-19 16:09:07] INFO:   46. 115407
+[2025-05-19 16:09:07] INFO:   47. 115411
+[2025-05-19 16:09:07] INFO:   48. 115413
+[2025-05-19 16:09:07] INFO:   49. 115415
+[2025-05-19 16:09:07] INFO:   50. 115417
+[2025-05-19 16:09:07] INFO:   51. 115418
+[2025-05-19 16:09:07] INFO:   52. 115421
+[2025-05-19 16:09:07] INFO:   53. 115426
+[2025-05-19 16:09:07] INFO:   54. 115441
+[2025-05-19 16:09:07] INFO:   55. 115449
+[2025-05-19 16:09:07] INFO:   56. 115450
+[2025-05-19 16:09:07] INFO:   57. 115454
+[2025-05-19 16:09:07] INFO:   58. 115468
+[2025-05-19 16:09:07] INFO:   59. 115490
+[2025-05-19 16:09:07] INFO:   60. 115492
+[2025-05-19 16:09:07] INFO:   61. 115493
+[2025-05-19 16:09:07] INFO:   62. 115495
+[2025-05-19 16:09:07] INFO:   63. 115496
+[2025-05-19 16:09:07] INFO:   64. 115497
+[2025-05-19 16:09:07] INFO:   65. 115500
+[2025-05-19 16:09:07] INFO:   66. 115504
+[2025-05-19 16:09:07] INFO:   67. 115508
+[2025-05-19 16:09:07] INFO:   68. 115509
+[2025-05-19 16:09:07] INFO:   69. 115512
+[2025-05-19 16:09:07] INFO:   70. 115537
+[2025-05-19 16:09:07] INFO:   71. 115541
+[2025-05-19 16:09:07] INFO:   72. 115543
+[2025-05-19 16:09:07] INFO:   73. 115546
+[2025-05-19 16:09:07] INFO:   74. 115556
+[2025-05-19 16:09:07] INFO:   75. 115568
+[2025-05-19 16:09:07] INFO:   76. 115572
+[2025-05-19 16:09:07] INFO:   77. 115576
+[2025-05-19 16:09:07] INFO:   78. 115577
+[2025-05-19 16:09:07] INFO:   79. 115584
+[2025-05-19 16:09:07] INFO:   80. 115585
+[2025-05-19 16:09:07] INFO:   81. 115596
+[2025-05-19 16:09:07] INFO:   82. 115604
+[2025-05-19 16:09:07] INFO:   83. 115605
+[2025-05-19 16:09:07] INFO:   84. 115638
+[2025-05-19 16:09:07] INFO:   85. 115643
+[2025-05-19 16:09:07] INFO:   86. 115644
+[2025-05-19 16:09:07] INFO:   87. 115647
+[2025-05-19 16:09:07] INFO:   88. 115657
+[2025-05-19 16:09:07] INFO:   89. 115664
+[2025-05-19 16:09:07] INFO:   90. 115665
+[2025-05-19 16:09:07] INFO:   91. 115674
+[2025-05-19 16:09:07] INFO:   92. 115675
+[2025-05-19 16:09:07] INFO:   93. 115692
+[2025-05-19 16:09:07] INFO:   94. 115695
+[2025-05-19 16:09:07] INFO:   95. 115696
+[2025-05-19 16:09:07] INFO:   96. 115702
+[2025-05-19 16:09:07] INFO:   97. 115724
+[2025-05-19 16:09:07] INFO:   98. 115732
+[2025-05-19 16:09:07] INFO:   99. 115734
+[2025-05-19 16:09:07] INFO:   100. 115743
+[2025-05-19 16:09:07] INFO:   101. 115777
+[2025-05-19 16:09:07] INFO:   102. 115781
+[2025-05-19 16:09:07] INFO:   103. 115832
+[2025-05-19 16:09:07] INFO:   104. 115877
+[2025-05-19 16:09:07] INFO:   105. 115883
+[2025-05-19 16:09:07] INFO:   106. 115888
+[2025-05-19 16:09:07] INFO:   107. 115891
+[2025-05-19 16:09:07] INFO:   108. 115892
+[2025-05-19 16:09:07] INFO:   109. 115931
+[2025-05-19 16:09:07] INFO:   110. 115938
+[2025-05-19 16:09:07] INFO:   111. 115942
+[2025-05-19 16:09:07] INFO:   112. 115955
+[2025-05-19 16:09:07] INFO:   113. 115956
+[2025-05-19 16:09:07] INFO:   114. 115976
+[2025-05-19 16:09:07] INFO:   115. 115979
+[2025-05-19 16:09:07] INFO:   116. 115988
+[2025-05-19 16:09:07] INFO:   117. 115992
+[2025-05-19 16:09:07] INFO:   118. 116056
+[2025-05-19 16:09:07] INFO:   119. 116063
+[2025-05-19 16:09:07] INFO:   120. 116074
+[2025-05-19 16:09:07] INFO:   121. 116078
+[2025-05-19 16:09:07] INFO:   122. 116090
+[2025-05-19 16:09:07] INFO:   123. 116100
+[2025-05-19 16:09:07] INFO:   124. 116106
+[2025-05-19 16:09:07] INFO:   125. 116154
+[2025-05-19 16:09:07] INFO:   126. 116157
+[2025-05-19 16:09:07] INFO:   127. 116199
+[2025-05-19 16:09:07] INFO:   128. 116237
+[2025-05-19 16:09:07] INFO:   129. 116243
+[2025-05-19 16:09:07] INFO:   130. 116252
+[2025-05-19 16:09:07] INFO:   131. 116256
+[2025-05-19 16:09:07] INFO:   132. 116261
+[2025-05-19 16:09:07] INFO:   133. 116262
+[2025-05-19 16:09:07] INFO:   134. 116263
+[2025-05-19 16:09:07] INFO:   135. 116298
+[2025-05-19 16:09:07] INFO:   136. 116322
+[2025-05-19 16:09:07] INFO:   137. 116350
+[2025-05-19 16:09:07] INFO:   138. 116353
+[2025-05-19 16:09:07] INFO:   139. 116366
+[2025-05-19 16:09:07] INFO:   140. 116394
+[2025-05-19 16:09:07] INFO:   141. 116415
+[2025-05-19 16:09:07] INFO:   142. 116416
+[2025-05-19 16:09:07] INFO:   143. 116420
+[2025-05-19 16:09:07] INFO:   144. 116426
+[2025-05-19 16:09:07] INFO:   145. 116492
+[2025-05-19 16:09:07] INFO:   146. 116501
+[2025-05-19 16:09:07] INFO:   147. 116504
+[2025-05-19 16:09:07] INFO:   148. 116538
+[2025-05-19 16:09:07] INFO:   149. 116540
+[2025-05-19 16:09:07] INFO:   150. 116542
+[2025-05-19 16:09:07] INFO:   151. 116543
+[2025-05-19 16:09:07] INFO:   152. 116546
+[2025-05-19 16:09:07] INFO:   153. 116548
+[2025-05-19 16:09:07] INFO:   154. 116576
+[2025-05-19 16:09:07] INFO:   155. 116577
+[2025-05-19 16:09:07] INFO:   156. 116580
+[2025-05-19 16:09:07] INFO:   157. 116582
+[2025-05-19 16:09:07] INFO:   158. 116584
+[2025-05-19 16:09:07] INFO:   159. 116616
+[2025-05-19 16:09:07] INFO:   160. 116618
+[2025-05-19 16:09:07] INFO:   161. 116628
+[2025-05-19 16:09:07] INFO:   162. 116637
+[2025-05-19 16:09:07] INFO:   163. 116653
+[2025-05-19 16:09:07] INFO:   164. 116668
+[2025-05-19 16:09:07] INFO:   165. 116672
+[2025-05-19 16:09:07] INFO:   166. 116725
+[2025-05-19 16:09:07] INFO:   167. 116732
+[2025-05-19 16:09:07] INFO:   168. 116734
+[2025-05-19 16:09:07] INFO:   169. 116774
+[2025-05-19 16:09:07] INFO:   170. 116790
+[2025-05-19 16:09:07] INFO:   171. 116848
+[2025-05-19 16:09:07] INFO:   172. 116850
+[2025-05-19 16:09:07] INFO:   173. 116852
+[2025-05-19 16:09:07] INFO:   174. 116855
+[2025-05-19 16:09:07] INFO:   175. 116870
+[2025-05-19 16:09:07] INFO:   176. 116923
+[2025-05-19 16:09:07] INFO:   177. 116932
+[2025-05-19 16:09:07] INFO:   178. 116937
+[2025-05-19 16:09:07] INFO:   179. 116939
+[2025-05-19 16:09:07] INFO:   180. 116940
+[2025-05-19 16:09:07] INFO:   181. 116941
+[2025-05-19 16:09:07] INFO:   182. 116944
+[2025-05-19 16:09:07] INFO:   183. 116963
+[2025-05-19 16:09:07] INFO:   184. 116969
+[2025-05-19 16:09:07] INFO:   185. 116975
+[2025-05-19 16:09:07] INFO:   186. 116992
+[2025-05-19 16:09:07] INFO:   187. 116998
+[2025-05-19 16:09:07] INFO:   188. 117001
+[2025-05-19 16:09:07] INFO:   189. 117003
+[2025-05-19 16:09:07] INFO:   190. 117010
+[2025-05-19 16:09:07] INFO:   191. 117013
+[2025-05-19 16:09:07] INFO:   192. 117044
+[2025-05-19 16:09:07] INFO:   193. 117046
+[2025-05-19 16:09:07] INFO:   194. 117047
+[2025-05-19 16:09:07] INFO:   195. 117049
+[2025-05-19 16:09:07] INFO:   196. 117059
+[2025-05-19 16:09:07] INFO:   197. 117068
+[2025-05-19 16:09:07] INFO:   198. 117093
+[2025-05-19 16:09:07] INFO:   199. 117097
+[2025-05-19 16:09:07] INFO:   200. 117106
+[2025-05-19 16:09:07] INFO:   201. 117110
+[2025-05-19 16:09:07] INFO:   202. 117111
+[2025-05-19 16:09:07] INFO:   203. 117128
+[2025-05-19 16:09:07] INFO:   204. 117134
+[2025-05-19 16:09:07] INFO:   205. 117136
+[2025-05-19 16:09:07] INFO:   206. 117143
+[2025-05-19 16:09:07] INFO:   207. 117145
+[2025-05-19 16:09:07] INFO:   208. 117171
+[2025-05-19 16:09:07] INFO:   209. 117195
+[2025-05-19 16:09:07] INFO:   210. 117199
+[2025-05-19 16:09:07] INFO:   211. 117202
+[2025-05-19 16:09:07] INFO:   212. 117216
+[2025-05-19 16:09:07] INFO:   213. 117242
+[2025-05-19 16:09:07] INFO:   214. 117249
+[2025-05-19 16:09:07] INFO:   215. 117254
+[2025-05-19 16:09:07] INFO:   216. 117280
+[2025-05-19 16:09:07] INFO:   217. 117294
+[2025-05-19 16:09:07] INFO:   218. 117296
+[2025-05-19 16:09:07] INFO:   219. 117298
+[2025-05-19 16:09:07] INFO:   220. 117305
+[2025-05-19 16:09:07] INFO:   221. 117360
+[2025-05-19 16:09:07] INFO:   222. 117365
+[2025-05-19 16:09:07] INFO:   223. 117366
+[2025-05-19 16:09:07] INFO:   224. 117368
+[2025-05-19 16:09:07] INFO:   225. 117374
+[2025-05-19 16:09:07] INFO:   226. 117397
+[2025-05-19 16:09:07] INFO:   227. 117405
+[2025-05-19 16:09:07] INFO:   228. 117406
+[2025-05-19 16:09:07] INFO:   229. 117438
+[2025-05-19 16:09:07] INFO:   230. 117446
+[2025-05-19 16:09:07] INFO:   231. 117467
+[2025-05-19 16:09:07] INFO:   232. 117468
+[2025-05-19 16:09:07] INFO:   233. 117472
+[2025-05-19 16:09:07] INFO:   234. 117477
+[2025-05-19 16:09:07] INFO:   235. 117478
+[2025-05-19 16:09:07] INFO:   236. 117479
+[2025-05-19 16:09:07] INFO:   237. 117483
+[2025-05-19 16:09:07] INFO:   238. 117492
+[2025-05-19 16:09:07] INFO:   239. 117494
+[2025-05-19 16:09:07] INFO:   240. 117506
+[2025-05-19 16:09:07] INFO:   241. 117522
+[2025-05-19 16:09:07] INFO:   242. 117528
+[2025-05-19 16:09:07] INFO:   243. 117529
+[2025-05-19 16:09:07] INFO:   244. 117537
+[2025-05-19 16:09:07] INFO:   245. 117547
+[2025-05-19 16:09:07] INFO:   246. 117548
+[2025-05-19 16:09:07] INFO:   247. 117553
+[2025-05-19 16:09:07] INFO:   248. 117554
+[2025-05-19 16:09:07] INFO:   249. 117557
+[2025-05-19 16:09:07] INFO:   250. 117563
+[2025-05-19 16:09:07] INFO:   251. 117567
+[2025-05-19 16:09:07] INFO:   252. 117571
+[2025-05-19 16:09:07] INFO:   253. 117576
+[2025-05-19 16:09:07] INFO:   254. 117649
+[2025-05-19 16:09:07] INFO:   255. 117667
+[2025-05-19 16:09:07] INFO:   256. 117680
+[2025-05-19 16:09:07] INFO:   257. 117737
+[2025-05-19 16:09:07] INFO:   258. 117739
+[2025-05-19 16:09:07] INFO:   259. 117742
+[2025-05-19 16:09:07] INFO:   260. 117775
+[2025-05-19 16:09:07] INFO:   261. 117776
+[2025-05-19 16:09:07] INFO:   262. 117781
+[2025-05-19 16:09:07] INFO:   263. 117789
+[2025-05-19 16:09:07] INFO:   264. 117805
+[2025-05-19 16:09:07] INFO:   265. 117806
+[2025-05-19 16:09:07] INFO:   266. 117824
+[2025-05-19 16:09:07] INFO:   267. 117830
+[2025-05-19 16:09:07] INFO:   268. 117856
+[2025-05-19 16:09:07] INFO:   269. 117873
+[2025-05-19 16:09:07] INFO:   270. 117896
+[2025-05-19 16:09:07] INFO:   271. 117965
+[2025-05-19 16:09:07] INFO:   272. 117971
+[2025-05-19 16:09:07] INFO:   273. 117985
+[2025-05-19 16:09:07] INFO:   274. 118040
+[2025-05-19 16:09:07] INFO:   275. 118044
+[2025-05-19 16:09:07] INFO:   276. 118045
+[2025-05-19 16:09:07] INFO:   277. 118071
+[2025-05-19 16:09:07] INFO:   278. 118073
+[2025-05-19 16:09:07] INFO:   279. 118074
+[2025-05-19 16:09:07] INFO:   280. 118100
+[2025-05-19 16:09:07] INFO:   281. 118107
+[2025-05-19 16:09:07] INFO:   282. 118108
+[2025-05-19 16:09:07] INFO:   283. 118119
+[2025-05-19 16:09:07] INFO:   284. 118120
+[2025-05-19 16:09:07] INFO:   285. 118134
+[2025-05-19 16:09:07] INFO:   286. 118182
+[2025-05-19 16:09:07] INFO:   287. 118243
+[2025-05-19 16:09:07] INFO:   288. 118245
+[2025-05-19 16:09:07] INFO:   289. 118268
+[2025-05-19 16:09:07] INFO:   290. 118295
+[2025-05-19 16:09:07] INFO:   291. 118364
+[2025-05-19 16:09:07] INFO:   292. 118380
+[2025-05-19 16:09:07] INFO:   293. 118396
+[2025-05-19 16:09:07] INFO:   294. 118442
+[2025-05-19 16:09:07] INFO:   295. 118443
+[2025-05-19 16:09:07] INFO:   296. 118445
+[2025-05-19 16:09:07] INFO:   297. 118446
+[2025-05-19 16:09:07] INFO:   298. 118447
+[2025-05-19 16:09:07] INFO:   299. 118452
+[2025-05-19 16:09:07] INFO:   300. 118455
+[2025-05-19 16:09:07] INFO:   301. 118457
+[2025-05-19 16:09:07] INFO:   302. 118458
+[2025-05-19 16:09:07] INFO:   303. 118464
+[2025-05-19 16:09:07] INFO:   304. 118465
+[2025-05-19 16:09:07] INFO:   305. 118473
+[2025-05-19 16:09:07] INFO:   306. 118477
+[2025-05-19 16:09:07] INFO:   307. 118496
+[2025-05-19 16:09:07] INFO:   308. 118512
+[2025-05-19 16:09:07] INFO:   309. 118542
+[2025-05-19 16:09:07] INFO:   310. 118564
+[2025-05-19 16:09:07] INFO:   311. 118569
+[2025-05-19 16:09:07] INFO:   312. 118603
+[2025-05-19 16:09:07] INFO:   313. 118610
+[2025-05-19 16:09:07] INFO:   314. 118662
+[2025-05-19 16:09:07] INFO:   315. 118665
+[2025-05-19 16:09:07] INFO:   316. 118666
+[2025-05-19 16:09:07] INFO:   317. 118670
+[2025-05-19 16:09:07] INFO:   318. 118674
+[2025-05-19 16:09:07] INFO:   319. 118695
+[2025-05-19 16:09:07] INFO:   320. 118718
+[2025-05-19 16:09:07] INFO:   321. 118730
+[2025-05-19 16:09:07] INFO:   322. 118731
+[2025-05-19 16:09:07] INFO:   323. 118767
+[2025-05-19 16:09:07] INFO:   324. 118768
+[2025-05-19 16:09:07] INFO:   325. 118783
+[2025-05-19 16:09:07] INFO:   326. 118784
+[2025-05-19 16:09:07] INFO:   327. 118819
+[2025-05-19 16:09:07] INFO:   328. 118822
+[2025-05-19 16:09:07] INFO:   329. 118881
+[2025-05-19 16:09:07] INFO:   330. 118885
+[2025-05-19 16:09:07] INFO:   331. 118892
+[2025-05-19 16:09:07] INFO:   332. 118942
+[2025-05-19 16:09:07] INFO:   333. 118946
+[2025-05-19 16:09:07] INFO:   334. 118954
+[2025-05-19 16:09:07] INFO:   335. 118979
+[2025-05-19 16:09:07] INFO:   336. 118994
+[2025-05-19 16:09:07] INFO:   337. 119043
+[2025-05-19 16:09:07] INFO:   338. 119058
+[2025-05-19 16:09:07] INFO:   339. 119060
+[2025-05-19 16:09:07] INFO:   340. 119087
+[2025-05-19 16:09:07] INFO:   341. 119089
+[2025-05-19 16:09:07] INFO:   342. 119100
+[2025-05-19 16:09:07] INFO:   343. 119105
+[2025-05-19 16:09:07] INFO:   344. 119120
+[2025-05-19 16:09:07] INFO:   345. 119146
+[2025-05-19 16:09:07] INFO:   346. 119156
+[2025-05-19 16:09:07] INFO:   347. 119160
+[2025-05-19 16:09:07] INFO:   348. 119175
+[2025-05-19 16:09:07] INFO:   349. 119177
+[2025-05-19 16:09:07] INFO:   350. 119218
+[2025-05-19 16:09:07] INFO:   351. 119267
+[2025-05-19 16:09:07] INFO:   352. 119268
+[2025-05-19 16:09:07] INFO:   353. 119269
+[2025-05-19 16:09:07] INFO:   354. 119274
+[2025-05-19 16:09:07] INFO:   355. 119281
+[2025-05-19 16:09:07] INFO:   356. 119304
+[2025-05-19 16:09:07] INFO:   357. 119316
+[2025-05-19 16:09:07] INFO:   358. 119321
+[2025-05-19 16:09:07] INFO:   359. 119332
+[2025-05-19 16:09:07] INFO:   360. 119356
+[2025-05-19 16:09:07] INFO:   361. 119357
+[2025-05-19 16:09:07] INFO:   362. 119375
+[2025-05-19 16:09:07] INFO:   363. 119384
+[2025-05-19 16:09:07] INFO:   364. 119394
+[2025-05-19 16:09:07] INFO:   365. 119400
+[2025-05-19 16:09:07] INFO:   366. 119401
+[2025-05-19 16:09:07] INFO:   367. 119402
+[2025-05-19 16:09:07] INFO:   368. 119414
+[2025-05-19 16:09:07] INFO:   369. 119433
+[2025-05-19 16:09:07] INFO:   370. 119447
+[2025-05-19 16:09:07] INFO:   371. 119485
+[2025-05-19 16:09:07] INFO:   372. 119495
+[2025-05-19 16:09:07] INFO:   373. 119507
+[2025-05-19 16:09:07] INFO:   374. 119517
+[2025-05-19 16:09:07] INFO:   375. 119553
+[2025-05-19 16:09:07] INFO:   376. 119561
+[2025-05-19 16:09:07] INFO:   377. 119571
+[2025-05-19 16:09:07] INFO:   378. 119576
+[2025-05-19 16:09:07] INFO:   379. 119579
+[2025-05-19 16:09:07] INFO:   380. 119580
+[2025-05-19 16:09:07] INFO:   381. 119581
+[2025-05-19 16:09:07] INFO:   382. 119582
+[2025-05-19 16:09:07] INFO:   383. 119583
+[2025-05-19 16:09:07] INFO:   384. 119584
+[2025-05-19 16:09:07] INFO:   385. 119588
+[2025-05-19 16:09:07] INFO:   386. 119592
+[2025-05-19 16:09:07] INFO:   387. 119610
+[2025-05-19 16:09:07] INFO:   388. 119628
+[2025-05-19 16:09:07] INFO:   389. 119647
+[2025-05-19 16:09:07] INFO:   390. 119651
+[2025-05-19 16:09:07] INFO:   391. 119660
+[2025-05-19 16:09:07] INFO:   392. 119661
+[2025-05-19 16:09:07] INFO:   393. 119665
+[2025-05-19 16:09:07] INFO:   394. 119666
+[2025-05-19 16:09:07] INFO:   395. 119697
+[2025-05-19 16:09:07] INFO:   396. 119705
+[2025-05-19 16:09:07] INFO:   397. 119706
+[2025-05-19 16:09:07] INFO:   398. 119735
+[2025-05-19 16:09:07] INFO:   399. 119748
+[2025-05-19 16:09:07] INFO:   400. 119802
+[2025-05-19 16:09:07] INFO:   401. 119807
+[2025-05-19 16:09:07] INFO:   402. 119809
+[2025-05-19 16:09:07] INFO:   403. 119811
+[2025-05-19 16:09:07] INFO:   404. 119815
+[2025-05-19 16:09:07] INFO:   405. 119857
+[2025-05-19 16:09:07] INFO:   406. 119866
+[2025-05-19 16:09:07] INFO:   407. 119883
+[2025-05-19 16:09:07] INFO:   408. 119891
+[2025-05-19 16:09:07] INFO:   409. 119898
+[2025-05-19 16:09:07] INFO:   410. 120075
+[2025-05-19 16:09:07] INFO:   411. 120082
+[2025-05-19 16:09:07] INFO:   412. 120087
+[2025-05-19 16:09:07] INFO:   413. 120090
+[2025-05-19 16:09:07] INFO:   414. 120091
+[2025-05-19 16:09:07] INFO:   415. 120096
+[2025-05-19 16:09:07] INFO:   416. 120107
+[2025-05-19 16:09:07] INFO:   417. 120162
+[2025-05-19 16:09:07] INFO:   418. 120169
+[2025-05-19 16:09:07] INFO:   419. 120196
+[2025-05-19 16:09:07] INFO:   420. 120198
+[2025-05-19 16:09:07] INFO:   421. 120204
+[2025-05-19 16:09:07] INFO:   422. 120245
+[2025-05-19 16:09:07] INFO:   423. 120278
+[2025-05-19 16:09:07] INFO:   424. 120280
+[2025-05-19 16:09:07] INFO:   425. 120281
+[2025-05-19 16:09:07] INFO:   426. 120286
+[2025-05-19 16:09:07] INFO:   427. 120287
+[2025-05-19 16:09:07] INFO:   428. 120289
+[2025-05-19 16:09:07] INFO:   429. 120294
+[2025-05-19 16:09:07] INFO:   430. 120362
+[2025-05-19 16:09:07] INFO:   431. 120385
+[2025-05-19 16:09:07] INFO:   432. 120407
+[2025-05-19 16:09:07] INFO:   433. 120415
+[2025-05-19 16:09:07] INFO:   434. 120416
+[2025-05-19 16:09:07] INFO:   435. 120450
+[2025-05-19 16:09:07] INFO:   436. 120464
+[2025-05-19 16:09:07] INFO:   437. 120466
+[2025-05-19 16:09:07] INFO:   438. 120467
+[2025-05-19 16:09:07] INFO:   439. 120469
+[2025-05-19 16:09:07] INFO:   440. 120471
+[2025-05-19 16:09:07] INFO:   441. 120473
+[2025-05-19 16:09:07] INFO:   442. 120476
+[2025-05-19 16:09:07] INFO:   443. 120477
+[2025-05-19 16:09:07] INFO:   444. 120488
+[2025-05-19 16:09:07] INFO:   445. 120511
+[2025-05-19 16:09:07] INFO:   446. 120517
+[2025-05-19 16:09:07] INFO:   447. 120529
+[2025-05-19 16:09:07] INFO:   448. 120542
+[2025-05-19 16:09:07] INFO:   449. 120561
+[2025-05-19 16:09:07] INFO:   450. 120568
+[2025-05-19 16:09:07] INFO:   451. 120608
+[2025-05-19 16:09:07] INFO:   452. 120625
+[2025-05-19 16:09:07] INFO:   453. 120637
+[2025-05-19 16:09:07] INFO:   454. 120672
+[2025-05-19 16:09:07] INFO:   455. 120676
+[2025-05-19 16:09:07] INFO:   456. 120698
+[2025-05-19 16:09:07] INFO:   457. A priority 'Very High' SAP Note/KBA has just been released on component PP-SFC-PLN-CPT
+ 
+  Note 3537448 - Material number and plant can no longer be changed for components in the order or network
+ 
+  A new priority-1 SAP Note (also known as "SAP HotNews") or Knowledge Base Article ("Proactive Notification") has just been released. SAP recommends that you review it at your earliest convenience. Please either confirm that you have read the information or mark it as not relevant to you.
+[2025-05-19 16:09:07] INFO:   458. Access to "Mass Processing Production Orders" Fiori App for:
+
+- MONGAK (Karandeep Monga)
+- RAMNATHB (Bobby Ramnath)
+- MUHAMMADA (Arif Muhammad)
+- BHADRESAM (Meet Bhadresa)
+[2025-05-19 16:09:07] INFO:   459. Account closure for Sandeep Dixit as per OFB ticket 115445
+[2025-05-19 16:09:07] INFO:   460. Adding Dipannita to pull.
+
+Best regards
+
+Denada Duka
+Senior Manager Shared Services
+Mobile: 615-651-9367
+Email: denada.duka@thecronosgroup.com<mailto:denada.duka@thecronosgroup.com>
+
+
+From: Denada Duka
+Sent: Thursday November 28 2024 8:16 AM
+To: Sunny Charles <sunny.charles@eviden.com>
+Cc: Robin Pollachek <robin.pollachek@thecronosgroup.com>; IT <it@thecronosgroup.com>
+Subject: SAP Supplier Tax Table
+
+Hi Sunny
+Can you please send me the SAP tax table that  lists the supplier’s tax ID and the business partner number. I need the table similar to LFA1 I believe it’s LFB1. The Business Partner list doesn’t pull the tax ID and the supplier list does but it’s across all company codes and causes confusion for audit. Please let me know if you can pull and send this week. I need to submit an audit request.
+
+Best regards
+
+Denada Duka
+Senior Manager Shared Services
+Mobile: 615-651-9367
+Email: denada.duka@thecronosgroup.com<mailto:denada.duka@thecronosgroup.com>
+[2025-05-19 16:09:07] INFO:   461. Alissa Coticone (COTICONE) - SAP Access request mirror Patricia Thomas
+[2025-05-19 16:09:07] INFO:   462. All Gissell Parris is trying to access the new features for the Mass PO closure but her password is no longer working. Can you please reset it accordingly?
+[2025-05-19 16:09:07] INFO:   463. All active purchasing groups need to have the ability to be used in the creation and workflow of purchase orders for Cronos company code 2910.
+[2025-05-19 16:09:07] INFO:   464. All please ensure Danny Kisliansky has SAP access. For the time being his account should be modeled after what Alan had previously.
+[2025-05-19 16:09:07] INFO:   465. Amanda Meijers (MEIJERSA) - SAP Access mirror Patricia Thomas
+[2025-05-19 16:09:07] INFO:   466. Approval by manager attached
+[2025-05-19 16:09:07] INFO:   467. As of Oct 31 2024 we no longer use the BlackLine / SAP Integration.  Can stop the daily jobs for BlackLine (SAP) and can stop the daily reporting for BlackLine (SAP)
+[2025-05-19 16:09:07] INFO:   468. As part of ITGC.11 SAP User Access Review for the following 13 users FULL Role Removal and Move Users to Termination Group
+
+AVALOSA     
+BINUN       
+DESAID      
+FIELDI      
+GEORGEJ     
+GOGARIV     
+KAURSA      
+MCGREGORN   
+MURPHYJ     
+SIBYK       
+STOLLERG    
+SZEWCZYKM   
+WESTD
+
+See attached spreadsheet for reference.
+[2025-05-19 16:09:07] INFO:   469. As part of ITGC.11 SAP User Access Review for the following 16 users PARTIAL Role Removal.  
+
+AHMEDS      
+BUFES       
+CHUKSA      
+DAVISR      
+DURVES      
+GAVRYLYSHYNA
+JERRYM      
+KISLIANSKYD 
+KLAPPR      
+MARKP       
+MCGINNESSJ  
+MOHAMEDM    
+SMITHM      
+SPATAROM    
+VOROBYOVN   
+ZHANGC      
+
+See attached spreadsheet for reference.
+[2025-05-19 16:09:07] INFO:   470. As part of the top issue 0387 End of Maintenance of Suse Linux Enterprise we need to patch SAP Production Systems (All non-production systems have been patched already)
+Multiple Requests have been created with SAP to update the OS patches for all production systems as below:
+
+Request ID: 23974272 -> S4P / HSP
+Request ID: 23974132 -> CCP
+Request ID: 23974312 -> W1P
+Request ID: 23974332 -> W2P
+
+These will be patched on Saturday 21st Dec'2024 at 03:00am EST.
+[2025-05-19 16:09:07] INFO:   471. As per EWA report We need to Upgrade cloud connector CCP of Production Systems (All non-production systems have been completed)
+
+Service Request: 14938341 – CCP
+
+These will be upgraded on Sat 08th Mar'25 at 01:30 Am EST. Downtime 1hours 30mins.
+[2025-05-19 16:09:07] INFO:   472. As per EWA report We need to Upgrade database of Production Systems (All non-production systems have been completed)
+
+Service Request: 14412891 – HSP
+
+These will be upgraded on Sat 22nd Feb'25 at 01:30 Am EST. Downtime 2 hours 10mins.
+[2025-05-19 16:09:07] INFO:   473. As per EWA report we need to patch or SAP Production Systems (All non-production systems have been patched already)
+Multiple Requests have been created with SAP to update the OS patches:
+
+Service Request: 12783721 – CCP
+Service Request: 12783751 – W1P
+Service Request: 12783741   - W2P
+Service Request: 12783731– HSP/S4P
+
+
+These will be patched on Sat 16th Nov'24 at 03:00 am EST. Downtime 2.5 hours.
+[2025-05-19 16:09:07] INFO:   474. As per OFB ticekt 116113 Jerin is no longer with Cronos. Access has been terminated
+[2025-05-19 16:09:07] INFO:   475. As per OFB ticket 116171 Kevin is no longer with Cronos. Access disabled
+[2025-05-19 16:09:07] INFO:   476. As per OFB ticket 116172 Monica is no longer with Cronos. Access disabled
+[2025-05-19 16:09:07] INFO:   477. As we use the "Reconcile GR/IR Accounts"  App we are encountering a few issues. 
+
+1. Data for company code 2910 and I also suspect 1710 is not showing. We are not able to perform the write-off using this app. 
+2. When using the filter "Status" and selection "Write-off completed successfully " results are not shown. (this was working in QA200)
+3. When a processor is assigned no notification is triggered.
+[2025-05-19 16:09:07] INFO:   478. Ashraf Khan (KHANA) - SAP access mirror Patricia Thomas
+[2025-05-19 16:09:07] INFO:   479. Assign these roles below in S4Q (Quality)
+
+SAP_BR_AA_ACCOUNTANT
+SAP_BR_AP_MANAGER
+SAP_BR_AR_MANAGER
+SAP_BR_GL_ACCOUNTANT
+SAP_BR_CASH_MANAGER
+
+for the following SAP Users:
+
+Jimmy McGinness (MCGINNESSJ)
+Rob Davis (DAVISR)
+Danny Kisliansky (KISLIANSKYD)
+Denada Duka (DUKAD)
+Aman Kumar (KUMARA)
+Shivani Durve (DURVES)
+[2025-05-19 16:09:07] INFO:   480. Bank Statement Failure on Jan 2nd
+[2025-05-19 16:09:07] INFO:   481. Bank Statement Failure on Oct 7th
+[2025-05-19 16:09:07] INFO:   482. Bloomberg Exchange Rates - Not Imported for Nov 3rd 2024
+[2025-05-19 16:09:07] INFO:   483. Bloomberg Web Services Certificate Renewal
+[2025-05-19 16:09:07] INFO:   484. Brent Nielsen access to App "Manage workflow for purchase order"
+[2025-05-19 16:09:07] INFO:   485. Brent Nielsen to replace Derek West as Tier 1.  James Holm approval listed below
+
+
+PROCUREMENT 115 - ALL CC (2910292029302935) Purch Org 115 
+ Approval limits CAD
+
+Brent Nielsen         Director   Active  0-65K 
+Jeffrey Jacobson CGO Active  6500001-2.6K
+James Holm          CFO         Active  260000001-19M
+Mike Gorenstein CEO  Active  1900000001-26M
+[2025-05-19 16:09:07] INFO:   486. CDHDR Debug
+
+1. Generate a CDHDR Debug Report for the period July 1 through September 30 without filtering on any users.
+2. Generate a CDHDR Debug Report for the period October 1 through October 31 also without filtering on any users.
+3. Generate a CDHDR Debug Report for the period October 1 through October 31 filtered for the following users:
+       BATCH_OTC
+       FF_Blackline
+       FF_RTR2
+       SAPOSS3
+
+4. Generate a CDHDR Debug Report & Super User Report from Jan 1st to December 31st withOUT any filters
+[2025-05-19 16:09:07] INFO:   487. Can I please request access to the SAP GUI that restricts my access to building custom reports?.  I would like to access the SAP Query/QuickViewer (SQVI/SQ01) so I can create custom reports that involve joining data from multiple tables.  Also is it possible I would like to access ABAP Editor (SE38) so I can also use that functionality to build custom reports.  Finally if possible I would like to have access to the SAP Fiori Custom Analytical Query App so I can build real-time analytics in SAP S/4Hana.  
+
+SAP GUI Access – Need to install software on your computer which requires IT OPS to be involved - Ticket 119416
+
+SAP Query/QuickViewer (SQVI/SQ01) - Ticket 119414
+SAP Fiori Customer Analytical Query App – Ticket 119414
+[2025-05-19 16:09:07] INFO:   488. Can Jessica Thomson please have SAP access with he same access as Christa Miller?
+
+Thanks
+
+Bruce Harpell
+Production Manager
+
+Email: bruce.harpell@thecronosgroup.com<mailto:bruce.harpell@thecronosgroup.com>
+Cell:    705 606 4020
+
+[https://ci4.googleusercontent.com/proxy/SVf0UIT5gJ8lNrK5_Xv-096uNjbXqdRE24uWUEzLmxeE90pcaouQIWMm1MNsOWTrZXX-sFPNE6TwlybnFl7-iQ=s0-d-e1-ft#http://thecronosgroup.com/Cronos-Black-sm.png]
+Cronos Group
+TheCronosGroup.com
+<http://thecronosgroup.com/>NASDAQ: CRON  |  TSX: CRON
+Confidentiality Notice: The information contained in this email may be confidential and legally privileged. It is intended only for use of the individual named. If you are not the intended recipient you are hereby notified that the disclosure copying distribution or taking of any action in regards to the contents of this email – except its direct delivery to the intended recipient – is strictly prohibited. If you have received this email in error please notify the sender immediately and delete from your system.
+[2025-05-19 16:09:07] INFO:   489. Can we please add SAP Roles for Kendra Hockey and use Savi Bhalkaran roles as a template
+Attaching email approval from the manager under the attachments of this ticket
+[2025-05-19 16:09:07] INFO:   490. Can you please provide an updated analysis of custom T-code transactions for August -  December 2024 so we can update our review as part of the year-end audit?
+[2025-05-19 16:09:07] INFO:   491. Can you please remove all users' access to OB52 - Open and Close Periods with the exception of:
+
+Jared Kenost
+Brent Goodwin
+Arnaud Young
+
+Only these 3 users should have access to open and close periods in SAP.
+[2025-05-19 16:09:07] INFO:   492. Can you please run the reports on new customer and credit limit change list CC 2920 for (Oct-Dec 2024) period. Thanks
+Parinaz
+[2025-05-19 16:09:07] INFO:   493. Can you provide the SAP Screenshots of the SCC4 Client 200 and System Change Option that show the changes to the SAP Production S4P-200 Client and transports for Client Specific Objects and Cross-Client Object Changes are not allowed. See below examples from last year:
+[2025-05-19 16:09:07] INFO:   494. Cannot move units from blocked W100 to unblocked W100. Affected lot: 0000017128 Material: 20002388 Units: 105.
+Outbound deliver order created pop up appears no movement occurs. Attached screenshots of attempted movement.
+
+Please assist thank you!
+[2025-05-19 16:09:07] INFO:   495. Cash App - Payments not posted for Jan 17th 20th and 21st in SAP.   We need the payments posted to close January .
+
+AP and AR having the same problem.
+
+Thanks
+[2025-05-19 16:09:07] INFO:   496. Could you create a new job scheduling with background progrem to notify on Prior Period Opened?
+This is a background job that should use an ABAP program.
+Company codes should be all codes starting with 1 or 2.
+This should be scheduled every day and send the notification only if a period was opened.
+Emails should be sent to 
+brent.goodwin@thecronosgroup.com
+blake.torbeck@thecronosgroup.com
+jimmy.mcginness@thecronosgroup.com
+[2025-05-19 16:09:07] INFO:   497. Could you please provide the following individuals the option to open prior periods in SAP:
+jared.kenost@thecronosgroup.com
+brent.goodwin@thecronosgroup.com
+jimmy.mcginness@thecronosgroup.com (should already have the priviledge)
+
+Please remove the following individual from capability to open prior periods (and anyone else if there are any):
+arnaud.young@thecronosgroup.com
+[2025-05-19 16:09:07] INFO:   498. Create SAP Account for Sarah Mcaulay - copy Jessica Thomson
+RE: 116961
+[2025-05-19 16:09:07] INFO:   499. Create SAP User Access for Melanny Gutierrez - SAP ID: GUTIERREZM
+
+Same access/roles as Patricia Thomas (THOMASP)
+[2025-05-19 16:09:07] INFO:   500. Create SAP account for  Alanna Fonseca alanna.fonseca@thecronosgroup.com.
+[2025-05-19 16:09:07] INFO:   501. Create SAP account for Anna Shlimak to update DOA for Incident 114515
+[2025-05-19 16:09:07] INFO:   502. Create SAP account for Kwame Amoa (mirror Laurie Barker - BARKERL)
+[2025-05-19 16:09:07] INFO:   503. Create SAP account for Philip Mark to raise requisitions/POs  for all company codes.
+[2025-05-19 16:09:07] INFO:   504. Create SAP account for Terry Doucet terry.doucet@thecronosgroup.com. Reinstate Regulatory Affairs Purchasing Org 118
+[2025-05-19 16:09:07] INFO:   505. Create SUIM role for RUDNERW
+
+Role : Z_IT_BASIS_MONITORING
+
+Authorization Object :
+S_TCODE : TCD
+RFTBPROT_SUIM
+SCUH
+SLDW_HISTORY
+SACF_HISTORY
+RSAU_GET_WUSL
+SAIS_JOB_USER
+RSAUDITC_BCE
+SU24_INACTIVE
+SACF_INFO
+RSUSR_START_APPL
+SUIM_SHOW_USDOCU
+RSUSR_LOCAL_LIC
+[2025-05-19 16:09:07] INFO:   506. Create a new purchasing org and workflow for Government Affairs under all available company codes;
+
+ Michael Akavan                   Active  0-325K  0-325K  in alignment 
+Terry Doucet                       Active  32500001-2.6M 0-2.6M in alignment 
+James Holm                             Active  260000001-19M 0-19M in alignment 
+Mike Gorenstein                  Active  1900000001-26M 0-26M  in alignment
+[2025-05-19 16:09:07] INFO:   507. Credits and orders are posted after month is closed due to estimated delivery/billing dates. We need to implement a block or restriction in SAP in order to effectively prevent credits and orders being posted after the period is closed.
+
+Thanks
+Parinaz
+[2025-05-19 16:09:07] INFO:   508. Current Finished Goods pricing data will need to be included into the data load for John Galt. Nikhil will be working on this.
+[2025-05-19 16:09:07] INFO:   509. Cycle Count Configuration Walkthrough with Davidson & Co (along with Eviden)
+[2025-05-19 16:09:07] INFO:   510. DOA workflow is not activated to company code 2910 and purchase group 102due to this reason system is showing error message.
+
+Please create new ticket for extended DOA workflow to company code 2910 and purchase group 102.
+[2025-05-19 16:09:07] INFO:   511. Davidson has raised concerns about potential gaps in the production variance and PPV calculations within SAP. While management is currently analyzing and capitalizing on the variances effectively Cronos has never identified the configuration for these setups in SAP. Based on my review it appears that SAP is automatically configured to calculate both variances so my initial suggestion is to refer to the SOC report. However can you confirm if there’s any way the Eviden team can customize or disable these functions? If so we may need to schedule a quick walkthrough this week and I'd appreciate your help coordinating that.
+[2025-05-19 16:09:07] INFO:   512. Davidson is here doing some observations of our cycle count program and they have a few questions:
+
+- This report is showing items within the 90 day window for cycle count indicator item B’s.  
+- Looking to know what is the driving factor for items appearing on this list vs. our reporting which is tied to 90 days from last count or GR date for new products
+
+- Why are items on the Cycle Count report within the 90 days period.  For Example: Item 20000155 was received on Dec 9th 2024 but shows on Cycle Count report.
+[2025-05-19 16:09:07] INFO:   513. Davidson is requesting an access list  for individuals with access to create and enter PIDs.  They also are requesting a list of those with access to the cycle count application.  This is critical to the cycle count reliance decisioning.
+[2025-05-19 16:09:07] INFO:   514. Default SAP Incident Template
+[2025-05-19 16:09:07] INFO:   515. Default SAP Incident Template
+copy profile from Patricia Thomas
+ticket request - 116779
+[2025-05-19 16:09:07] INFO:   516. Delivery Stuck in Queue - Batch 1008222 (Refer to Ticket 119058)
+[2025-05-19 16:09:07] INFO:   517. Derek West is out of the office and we are requesting that the DOA on POs 4500010300 and 4500010299 be redirected directly to Brent Merritt for approval.  Thank you.
+[2025-05-19 16:09:07] INFO:   518. Disabled SAP access for Isaac Tafoya on user last working day on 11/04/2024
+Submitting for tracking
+[2025-05-19 16:09:07] INFO:   519. Disabled SAP access for Michael Johnston  on user last working day on 11/04/2024
+Submitting for tracking
+[2025-05-19 16:09:07] INFO:   520. Download of SAP Journal Entries in Production from Jan 2024 to Dec 2024
+
+Because of size download in quarters (Jan to Mar Apr to Jun Jul to Sep Oct to Dec)
+[2025-05-19 16:09:07] INFO:   521. EPAC PO# 4500010655
+
+There are still 2 materials that are needing to be completed that are needed very shortly for production.
+[2025-05-19 16:09:07] INFO:   522. Extend 118 Purchasing Org DOA to Company code 2910 & 2930.
+[2025-05-19 16:09:07] INFO:   523. Extend Purch Group 107 to cc 2930
+[2025-05-19 16:09:07] INFO:   524. Failed Bank Statement Posting on December 3 2024
+[2025-05-19 16:09:07] INFO:   525. Failed Bank Statements for Nov 4th & 7th Dec 9th 2024
+[2025-05-19 16:09:07] INFO:   526. Failure of Bank Statement for Nov 18th & 19th
+[2025-05-19 16:09:07] INFO:   527. Fill out SAP Clean Core Questionnaire for SAP
+[2025-05-19 16:09:07] INFO:   528. FireFighter Reports for  July 2024 August 2024 September 2024
+
+- All Transactions for each month
+- Associate each transaction to a SysAid Ticket and/or Pathlock Request ID
+- If NO SysAid Ticket and/or Pathlock Request ID explain what the transaction was used for
