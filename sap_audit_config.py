@@ -21,25 +21,57 @@ USAGE:
       COLUMNS,       # Column name mappings for different data sources
       SETTINGS,      # Processing settings and thresholds
       PATTERNS,      # File name patterns for data source files
-      VERSION        # Current version of the tool
+      VERSION,       # Current version of the tool
+      load_config_file  # Function to load configuration from external file
   )
 """
 
 import os
 import sys
+import json
 from datetime import datetime
+
+# Try to import optional dependencies
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
+# Environment variable prefix
+ENV_PREFIX = "SAP_AUDIT_"
+
+# Try to load .env file if dotenv is installed
+try:
+    from dotenv import load_dotenv
+    # Load from .env file if it exists
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+        print(f"Loaded environment variables from {env_path}")
+except ImportError:
+    # Optional dependency, just skip if not installed
+    pass
+
+def get_env_value(env_var, default_value):
+    """Get value from environment variable or use default."""
+    env_name = f"{ENV_PREFIX}{env_var}"
+    env_value = os.environ.get(env_name)
+    return env_value if env_value else default_value
 
 # =========================================================================
 # VERSION INFORMATION
 # =========================================================================
-VERSION = "4.5.0"  # Updated with Configuration Module (May 2025)
+VERSION = "4.6.0"  # Updated with Environment Variable Support (May 2025)
 VERSION_INFO = {
     "major": 4,
-    "minor": 5,
+    "minor": 6,
     "patch": 0,
     "release_date": "May 2025",
     "features": [
         "Centralized configuration",
+        "Environment variable support",
+        "External config file loading",
         "Enhanced SysAid integration",
         "Improved error handling",
         "Better logging and reporting"
@@ -51,32 +83,44 @@ VERSION_INFO = {
 # =========================================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Define path getter with environment variable support
+def get_env_path(env_var, default_path):
+    """Get path from environment variable or use default."""
+    env_value = get_env_value(env_var, None)
+    if env_value:
+        # Handle relative paths (relative to script directory)
+        if not os.path.isabs(env_value):
+            return os.path.join(SCRIPT_DIR, env_value)
+        return env_value
+    return default_path
+
+# Path configuration with environment variable support
 PATHS = {
     "script_dir": SCRIPT_DIR,
-    "input_dir": os.path.join(SCRIPT_DIR, "input"),
-    "output_dir": os.path.join(SCRIPT_DIR, "output"),
-    "cache_dir": os.path.join(SCRIPT_DIR, "cache"),
+    "input_dir": get_env_path("INPUT_DIR", os.path.join(SCRIPT_DIR, "input")),
+    "output_dir": get_env_path("OUTPUT_DIR", os.path.join(SCRIPT_DIR, "output")),
+    "cache_dir": get_env_path("CACHE_DIR", os.path.join(SCRIPT_DIR, "cache")),
     
     # Input files (processed by data prep)
-    "sm20_input": os.path.join(SCRIPT_DIR, "input", "SM20.csv"),
-    "cdhdr_input": os.path.join(SCRIPT_DIR, "input", "CDHDR.csv"),
-    "cdpos_input": os.path.join(SCRIPT_DIR, "input", "CDPOS.csv"),
-    "sysaid_input": os.path.join(SCRIPT_DIR, "input", "SysAid.xlsx"),
+    "sm20_input": get_env_path("SM20_INPUT", os.path.join(SCRIPT_DIR, "input", "SM20.csv")),
+    "cdhdr_input": get_env_path("CDHDR_INPUT", os.path.join(SCRIPT_DIR, "input", "CDHDR.csv")),
+    "cdpos_input": get_env_path("CDPOS_INPUT", os.path.join(SCRIPT_DIR, "input", "CDPOS.csv")),
+    "sysaid_input": get_env_path("SYSAID_INPUT", os.path.join(SCRIPT_DIR, "input", "SysAid.xlsx")),
     
     # Reference data files for analysis enhancement
-    "tcodes_reference": os.path.join(SCRIPT_DIR, "input", "TCodes.csv"),
-    "tables_reference": os.path.join(SCRIPT_DIR, "input", "Tables.csv"),
-    "events_reference": os.path.join(SCRIPT_DIR, "input", "Events.csv"),
-    "high_risk_tcodes": os.path.join(SCRIPT_DIR, "input", "HighRiskTCodes.csv"),
-    "high_risk_tables": os.path.join(SCRIPT_DIR, "input", "HighRiskTables.csv"),
+    "tcodes_reference": get_env_path("TCODES_REF", os.path.join(SCRIPT_DIR, "input", "TCodes.csv")),
+    "tables_reference": get_env_path("TABLES_REF", os.path.join(SCRIPT_DIR, "input", "Tables.csv")),
+    "events_reference": get_env_path("EVENTS_REF", os.path.join(SCRIPT_DIR, "input", "Events.csv")),
+    "high_risk_tcodes": get_env_path("HIGH_RISK_TCODES", os.path.join(SCRIPT_DIR, "input", "HighRiskTCodes.csv")),
+    "high_risk_tables": get_env_path("HIGH_RISK_TABLES", os.path.join(SCRIPT_DIR, "input", "HighRiskTables.csv")),
     
     # Output files
-    "session_timeline": os.path.join(SCRIPT_DIR, "SAP_Session_Timeline.xlsx"),
-    "audit_report": os.path.join(SCRIPT_DIR, "output", "SAP_Audit_Report.xlsx"),
+    "session_timeline": get_env_path("SESSION_TIMELINE", os.path.join(SCRIPT_DIR, "SAP_Session_Timeline.xlsx")),
+    "audit_report": get_env_path("AUDIT_REPORT", os.path.join(SCRIPT_DIR, "output", "SAP_Audit_Report.xlsx")),
     
     # Cache files
-    "sysaid_session_cache": os.path.join(SCRIPT_DIR, "cache", "sysaid_session_map.json"),
-    "record_counts_file": os.path.join(SCRIPT_DIR, "cache", "record_counts.json")
+    "sysaid_session_cache": get_env_path("SYSAID_CACHE", os.path.join(SCRIPT_DIR, "cache", "sysaid_session_map.json")),
+    "record_counts_file": get_env_path("RECORD_COUNTS", os.path.join(SCRIPT_DIR, "cache", "record_counts.json"))
 }
 
 # Create necessary directories
@@ -222,24 +266,24 @@ SETTINGS = {
     "exclude_fields": ['COMMENTS'],
     
     # Date/time format for output
-    "datetime_format": '%Y-%m-%d %H:%M:%S',
+    "datetime_format": get_env_value("DATETIME_FORMAT", '%Y-%m-%d %H:%M:%S'),
     
     # File encoding for input/output
-    "encoding": "utf-8-sig",
+    "encoding": get_env_value("ENCODING", "utf-8-sig"),
     
     # Debug mode for verbose logging
-    "debug": False,
+    "debug": get_env_value("DEBUG", "false").lower() in ["true", "1", "yes", "y"],
     
     # Record count validation thresholds
     "count_validation": {
-        "error_threshold": 0.1,    # Error if more than 10% records lost
-        "warning_threshold": 0.01  # Warning if more than 1% records lost
+        "error_threshold": float(get_env_value("ERROR_THRESHOLD", "0.1")),    # Error if more than 10% records lost
+        "warning_threshold": float(get_env_value("WARNING_THRESHOLD", "0.01"))  # Warning if more than 1% records lost
     },
     
     # Column renaming behavior
     "column_renaming": {
-        "case_sensitive": False,   # Ignore case when matching columns
-        "fuzzy_matching": True     # Allow partial matches for column names
+        "case_sensitive": get_env_value("CASE_SENSITIVE", "false").lower() in ["true", "1", "yes", "y"],
+        "fuzzy_matching": get_env_value("FUZZY_MATCHING", "true").lower() in ["true", "1", "yes", "y"]
     }
 }
 
@@ -320,29 +364,97 @@ REPORTING = {
 # This combined configuration is used by the AuditController
 CONFIG = {
     # Default output format (excel or csv)
-    "output_format": "excel",
+    "output_format": get_env_value("OUTPUT_FORMAT", "excel"),
     
     # Default SysAid data source strategy (file or api)
-    "sysaid_source": "file",
+    "sysaid_source": get_env_value("SYSAID_SOURCE", "file"),
     
     # Enable/disable SysAid integration
-    "enable_sysaid": False,
+    "enable_sysaid": get_env_value("ENABLE_SYSAID", "false").lower() in ["true", "1", "yes", "y"],
     
     # Default path overrides (None means use paths from PATHS)
-    "output_path": None,
+    "output_path": get_env_value("OUTPUT_PATH", None),
     
     # Performance settings
-    "caching_enabled": True,
-    "parallel_processing": False,
+    "caching_enabled": get_env_value("CACHING_ENABLED", "true").lower() in ["true", "1", "yes", "y"],
+    "parallel_processing": get_env_value("PARALLEL_PROCESSING", "false").lower() in ["true", "1", "yes", "y"],
     
     # Risk assessment settings
     "risk_threshold": {
-        "critical": 90,
-        "high": 70,
-        "medium": 40,
-        "low": 10
+        "critical": int(get_env_value("RISK_THRESHOLD_CRITICAL", "90")),
+        "high": int(get_env_value("RISK_THRESHOLD_HIGH", "70")),
+        "medium": int(get_env_value("RISK_THRESHOLD_MEDIUM", "40")),
+        "low": int(get_env_value("RISK_THRESHOLD_LOW", "10"))
     }
 }
+
+# =========================================================================
+# CONFIGURATION FILE LOADING
+# =========================================================================
+def load_config_file(config_file_path):
+    """
+    Load configuration from an external file (YAML or JSON).
+    Overrides default settings with values from the file.
+    
+    Args:
+        config_file_path: Path to configuration file (YAML or JSON)
+        
+    Returns:
+        True if config was loaded successfully, False otherwise
+    """
+    if not os.path.exists(config_file_path):
+        log_message(f"Config file not found: {config_file_path}", "ERROR")
+        return False
+    
+    try:
+        # Determine file type by extension
+        if config_file_path.lower().endswith('.yaml') or config_file_path.lower().endswith('.yml'):
+            try:
+                import yaml
+                with open(config_file_path, 'r', encoding=SETTINGS['encoding']) as f:
+                    config_data = yaml.safe_load(f)
+            except ImportError:
+                log_message("YAML module not found. Install with: pip install pyyaml", "ERROR")
+                return False
+        elif config_file_path.lower().endswith('.json'):
+            with open(config_file_path, 'r', encoding=SETTINGS['encoding']) as f:
+                config_data = json.load(f)
+        else:
+            log_message(f"Unsupported config file format: {config_file_path}", "ERROR")
+            return False
+        
+        # Update configuration sections
+        for section in config_data:
+            section_upper = section.upper()
+            if section_upper == "PATHS":
+                for key, value in config_data[section].items():
+                    PATHS[key] = value
+            elif section_upper == "SETTINGS":
+                for key, value in config_data[section].items():
+                    if isinstance(value, dict) and key in SETTINGS and isinstance(SETTINGS[key], dict):
+                        # Merge nested dictionaries
+                        SETTINGS[key].update(value)
+                    else:
+                        SETTINGS[key] = value
+            elif section_upper == "CONFIG":
+                for key, value in config_data[section].items():
+                    if isinstance(value, dict) and key in CONFIG and isinstance(CONFIG[key], dict):
+                        # Merge nested dictionaries
+                        CONFIG[key].update(value)
+                    else:
+                        CONFIG[key] = value
+        
+        log_message(f"Loaded configuration from {config_file_path}", "INFO")
+        return True
+    
+    except Exception as e:
+        log_message(f"Error loading config file: {str(e)}", "ERROR")
+        return False
+
+# Check for config file specified by environment variable
+config_file_env = get_env_value("CONFIG_FILE", None)
+if config_file_env:
+    load_config_file(config_file_env)
 
 # =========================================================================
 # HELPER FUNCTIONS
@@ -398,3 +510,70 @@ def print_config_summary():
 # Call this function when the module is run directly
 if __name__ == "__main__":
     print_config_summary()
+    
+    # If --export-env flag is provided, generate a sample .env file
+    if len(sys.argv) > 1 and sys.argv[1] == "--export-env":
+        env_file_path = os.path.join(SCRIPT_DIR, '.env.sample')
+        with open(env_file_path, 'w', encoding='utf-8') as f:
+            f.write("# SAP Audit Tool Environment Variables\n")
+            f.write("# Copy this file to .env and modify as needed\n\n")
+            
+            # Paths
+            f.write("# Path Configuration\n")
+            for key in PATHS:
+                f.write(f"SAP_AUDIT_{key.upper()}={PATHS[key]}\n")
+            
+            # Settings
+            f.write("\n# General Settings\n")
+            f.write(f"SAP_AUDIT_DEBUG={str(SETTINGS['debug']).lower()}\n")
+            f.write(f"SAP_AUDIT_ENCODING={SETTINGS['encoding']}\n")
+            
+            # Config
+            f.write("\n# Application Configuration\n")
+            f.write(f"SAP_AUDIT_OUTPUT_FORMAT={CONFIG['output_format']}\n")
+            f.write(f"SAP_AUDIT_ENABLE_SYSAID={str(CONFIG['enable_sysaid']).lower()}\n")
+            f.write(f"SAP_AUDIT_CACHING_ENABLED={str(CONFIG['caching_enabled']).lower()}\n")
+            f.write(f"SAP_AUDIT_PARALLEL_PROCESSING={str(CONFIG['parallel_processing']).lower()}\n")
+            
+        print(f"Sample environment variables exported to {env_file_path}")
+        
+    # If --export-config flag is provided, generate a sample config file
+    if len(sys.argv) > 1 and sys.argv[1] == "--export-config":
+        try:
+            import yaml
+            have_yaml = True
+        except ImportError:
+            have_yaml = False
+            
+        sample_config = {
+            "paths": {
+                "input_dir": PATHS["input_dir"],
+                "output_dir": PATHS["output_dir"],
+                "cache_dir": PATHS["cache_dir"]
+            },
+            "settings": {
+                "debug": SETTINGS["debug"],
+                "encoding": SETTINGS["encoding"],
+                "count_validation": SETTINGS["count_validation"]
+            },
+            "config": {
+                "output_format": CONFIG["output_format"],
+                "enable_sysaid": CONFIG["enable_sysaid"],
+                "caching_enabled": CONFIG["caching_enabled"],
+                "parallel_processing": CONFIG["parallel_processing"],
+                "risk_threshold": CONFIG["risk_threshold"]
+            }
+        }
+        
+        # Save as JSON
+        json_path = os.path.join(SCRIPT_DIR, 'config.sample.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(sample_config, f, indent=2)
+        print(f"Sample JSON configuration exported to {json_path}")
+        
+        # Save as YAML if available
+        if have_yaml:
+            yaml_path = os.path.join(SCRIPT_DIR, 'config.sample.yaml')
+            with open(yaml_path, 'w', encoding='utf-8') as f:
+                yaml.dump(sample_config, f, default_flow_style=False)
+            print(f"Sample YAML configuration exported to {yaml_path}")

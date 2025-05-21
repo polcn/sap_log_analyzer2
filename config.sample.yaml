@@ -1,0 +1,33 @@
+# SAP Audit Tool Configuration
+
+paths:
+  input_dir: input
+  output_dir: output
+  cache_dir: cache
+  sm20_input: input/SM20.csv
+  cdhdr_input: input/CDHDR.csv
+  cdpos_input: input/CDPOS.csv
+  sysaid_input: input/SysAid.xlsx
+
+settings:
+  debug: false
+  encoding: utf-8-sig
+  datetime_format: '%Y-%m-%d %H:%M:%S'
+  count_validation:
+    error_threshold: 0.1
+    warning_threshold: 0.01
+  column_renaming:
+    case_sensitive: false
+    fuzzy_matching: true
+
+config:
+  output_format: excel
+  sysaid_source: file
+  enable_sysaid: false
+  caching_enabled: true
+  parallel_processing: false
+  risk_threshold:
+    critical: 90
+    high: 70
+    medium: 40
+    low: 10
