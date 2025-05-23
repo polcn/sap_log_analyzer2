@@ -1129,8 +1129,11 @@ class SessionMerger:
         log_message(f"Unified timeline created with {len(timeline)} total records")
         
         # Generate source statistics
-        source_counts = timeline['Source'].value_counts().to_dict()
-        log_stats("Records by source", source_counts)
+        try:
+            source_counts = timeline['Source'].value_counts().to_dict()
+            log_stats("Records by source", source_counts)
+        except Exception as e:
+            log_message(f"Warning: Unable to generate source statistics: {str(e)}", "WARNING")
         
         return timeline
     
@@ -1311,7 +1314,7 @@ class SessionMerger:
             # Step 5: Create unified timeline
             timeline = self.create_unified_timeline(sm20, cdhdr_cdpos)
             
-            if timeline.empty:
+            if timeline is None or timeline.empty:
                 log_message("No data to output after processing.", "WARNING")
                 return None
                 

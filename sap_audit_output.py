@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-SAP Audit Tool - Output Generation Module
+SAP Audit Tool - Enhanced Output Generation Module
 
-This module provides functionality for generating formatted output reports from SAP audit data.
-It implements the Template Method pattern for different output formats and includes
-configuration-based templating and visualization capabilities.
+This module provides functionality for generating formatted unified output reports from SAP audit data.
+It implements a single main tab approach that combines SM20, CDHDR, and CDPOS data into a unified view
+with additional analysis columns for audit workflow.
 
 Key features:
-- OutputGenerator abstract base class implementing Template Method pattern
-- Concrete implementations for Excel and CSV output formats
-- Configuration-based templating for consistent reporting
-- Visualization of risk statistics
-- Exception handling with handle_exception decorator
-- Standardized logging
+- Single main tab with unified view of audit data
+- Enhanced analysis flag columns for better categorization
+- Color-coded headers for different column types
+- Automated conclusions for standard activities
+- Eviden-specific columns with distinct formatting
 """
 
 import os
@@ -26,7 +25,7 @@ from io import BytesIO
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 # Import configuration and utilities
-from sap_audit_config import PATHS, REPORTING, COLUMNS, SETTINGS
+from sap_audit_config import PATHS, REPORTING, COLUMNS, SETTINGS, RISK
 from sap_audit_utils import (
     log_message, log_section, log_error, handle_exception,
     clean_whitespace, validate_required_columns
@@ -61,6 +60,8 @@ SOURCE_COLORS = {
     "CDPOS": "#C6E0B4",     # Green for CDPOS
     "Generated": "#F4B084", # Orange for generated fields
     "SysAid": "#D9D2E9",    # Light Purple for SysAid
+    "Eviden": "#CCFFCC",    # Light Green for Eviden columns
+    "Analysis": "#FFCC99",  # Peach for analysis columns
 }
 
 
@@ -135,6 +136,9 @@ class OutputGenerator(ABC):
             'Datetime': 'Generated',
             'Source': 'Generated',
             'TCode': 'Generated',
+            'TCode_Description': 'Generated',
+            'Event_Description': 'Generated',
+            'Table_Description': 'Generated',
             
             # SysAid columns
             'SYSAID#': 'SysAid',
@@ -147,7 +151,21 @@ class OutputGenerator(ABC):
             'Request time': 'SysAid',
             'SysAid Title': 'SysAid',
             'SysAid Notes': 'SysAid',
-            'SysAid Request User': 'SysAid'
+            'SysAid Request User': 'SysAid',
+            
+            # Analysis columns (new)
+            'Table_Maintenance': 'Analysis',
+            'High_Risk_TCode': 'Analysis',
+            'Change_Activity': 'Analysis',
+            'Transport_Related_Event': 'Analysis',
+            'Debugging_Related_Event': 'Analysis',
+            'Benign_Activity': 'Analysis',
+            'Observations': 'Analysis',
+            'Questions': 'Analysis',
+            'Conclusion': 'Analysis',
+            
+            # Eviden columns (new)
+            'Response': 'Eviden'
         }
         
         # Add any custom mappings from config
@@ -236,6 +254,7 @@ class OutputGenerator(ABC):
     def _prepare_report_data(self, data) -> pd.DataFrame:
         """
         Prepare data for reporting by cleaning, filtering, and organizing.
+        This method also adds any required analysis columns that don't already exist.
         
         Args:
             data: The raw session data
@@ -258,6 +277,15 @@ class OutputGenerator(ABC):
             except Exception as e:
                 log_message(f"Warning: Could not convert column '{col}' to string: {str(e)}", "WARNING")
         
+        # Add analysis flag columns if they don't exist
+        prepared_data = self._add_analysis_flag_columns(prepared_data)
+        
+        # Add audit workflow columns if they don't exist
+        prepared_data = self._add_audit_workflow_columns(prepared_data)
+        
+        # Auto-populate conclusions for standard activities
+        prepared_data = self._auto_populate_conclusions(prepared_data)
+        
         # Organize columns according to configuration if specified
         if "column_order" in self.config:
             ordered_cols = [col for col in self.config["column_order"] if col in prepared_data.columns]
@@ -266,6 +294,234 @@ class OutputGenerator(ABC):
         
         log_message(f"Prepared {len(prepared_data)} records for reporting")
         return prepared_data
+    
+    def _add_analysis_flag_columns(self, data):
+        """
+        Add analysis flag columns if they don't already exist.
+        
+        Args:
+            data: DataFrame to enhance
+            
+        Returns:
+            DataFrame with analysis flag columns
+        """
+        # Initialize new columns if they don't exist
+        flag_columns = [
+            'Table_Maintenance', 'High_Risk_TCode', 'Change_Activity',
+            'Transport_Related_Event', 'Debugging_Related_Event', 'Benign_Activity'
+        ]
+        
+        # Only add columns that don't already exist
+        for col in flag_columns:
+            if col not in data.columns:
+                data[col] = ""
+        
+        # If data has already been processed by the analyzer, we don't need to add logic
+        # Otherwise, add basic logic for each column
+        
+        # Table Maintenance flag
+        if 'Table_Maintenance' in data.columns and data['Table_Maintenance'].astype(str).eq('').all():
+            log_message("Adding Table Maintenance flag logic")
+            # Check for table maintenance transaction codes
+            table_maint_tcodes = ['SM30', 'SM31', 'SM34', 'SE16', 'SE16N', 'SM32', 'SE11', 'SE13']
+            
+            if "TCode" in data.columns:
+                data.loc[data["TCode"].isin(table_maint_tcodes), "Table_Maintenance"] = "Yes"
+            
+        # High Risk TCode flag - basic version, could be expanded later
+        if 'High_Risk_TCode' in data.columns and data['High_Risk_TCode'].astype(str).eq('').all():
+            log_message("Adding High Risk TCode flag logic")
+            high_risk_tcodes = [
+                # Development
+                'SE38', 'SE37', 'SE80', 'SE24', 'SE93',
+                # Security
+                'SU01', 'PFCG', 'SU53', 'SU10', 'SU24',
+                # Table maintenance
+                'SM30', 'SM31', 'SE16', 'SE16N', 'SE11',
+                # Configuration
+                'SPRO', 'SCOT', 'SMLG',
+                # Transport
+                'STMS', 'SE01', 'SE09', 'SE10'
+            ]
+            
+            # Categorize high risk TCodes
+            tcode_categories = {
+                'Development': ['SE38', 'SE37', 'SE80', 'SE24', 'SE93'],
+                'Security': ['SU01', 'PFCG', 'SU53', 'SU10', 'SU24'],
+                'Table Maintenance': ['SM30', 'SM31', 'SE16', 'SE16N', 'SE11'],
+                'Configuration': ['SPRO', 'SCOT', 'SMLG'],
+                'Transport': ['STMS', 'SE01', 'SE09', 'SE10']
+            }
+            
+            if "TCode" in data.columns:
+                for category, tcodes in tcode_categories.items():
+                    data.loc[data["TCode"].isin(tcodes), "High_Risk_TCode"] = category
+        
+        # Change Activity flag
+        if 'Change_Activity' in data.columns and data['Change_Activity'].astype(str).eq('').all():
+            log_message("Adding Change Activity flag logic")
+            
+            if "Change_Indicator" in data.columns:
+                # Map common change indicators
+                change_map = {
+                    "U": "02 - Update",  # Update
+                    "I": "01 - Insert",  # Insert
+                    "D": "06 - Delete",  # Delete
+                    "C": "04 - Create",  # Create
+                    "M": "02 - Update",  # Modify
+                }
+                
+                # First normalize the change indicators
+                data["_temp_change_ind"] = data["Change_Indicator"].str.strip().str.upper()
+                
+                # Apply the mapping
+                for indicator, activity in change_map.items():
+                    data.loc[data["_temp_change_ind"] == indicator, "Change_Activity"] = activity
+                
+                # Drop the temporary column
+                data = data.drop(columns=["_temp_change_ind"])
+            
+            # Handle display TCodes specifically
+            if "TCode" in data.columns:
+                display_tcodes = [tcode for tcode in data["TCode"].unique() 
+                                 if str(tcode).endswith('03') or str(tcode).endswith('04')]
+                # Don't mark display transactions as change activity unless they already have a change indicator
+                data.loc[(data["TCode"].isin(display_tcodes)) & 
+                        (data["Change_Activity"] == ""), "Change_Activity"] = ""
+        
+        # Transport Related Event flag
+        if 'Transport_Related_Event' in data.columns and data['Transport_Related_Event'].astype(str).eq('').all():
+            log_message("Adding Transport Related Event flag logic")
+            
+            # Transport-related transaction codes
+            transport_tcodes = ['STMS', 'SE01', 'SE09', 'SE10', 'SE03', 'SE38', 'SE80']
+            
+            if "TCode" in data.columns:
+                data.loc[data["TCode"].isin(transport_tcodes), "Transport_Related_Event"] = "Yes"
+            
+            # Check for transport-related terms in description if available
+            if "Description" in data.columns:
+                transport_terms = ['transport', 'release', 'import', 'STMS', 'development', 
+                                  'request', 'package', 'workbench', 'TR']
+                
+                # Create a regex pattern for transport terms
+                transport_pattern = '|'.join(transport_terms)
+                
+                # Flag rows with transport terms in description
+                data.loc[(data["Transport_Related_Event"] == "") & 
+                         (data["Description"].str.contains(transport_pattern, case=False, na=False)), 
+                         "Transport_Related_Event"] = "Yes"
+        
+        # Debugging Related Event flag
+        if 'Debugging_Related_Event' in data.columns and data['Debugging_Related_Event'].astype(str).eq('').all():
+            log_message("Adding Debugging Related Event flag logic")
+            
+            # Debug transaction codes
+            debug_tcodes = ['/H', 'ABAPDBG', 'SE24', 'SE37', 'SE38', 'SE80']
+            
+            if "TCode" in data.columns:
+                data.loc[data["TCode"].isin(debug_tcodes), "Debugging_Related_Event"] = "Yes"
+            
+            # Check for debug markers in Variable_2 if available
+            if "Variable_2" in data.columns:
+                data.loc[data["Variable_2"].str.contains('I!|D!|G!', na=False), 
+                         "Debugging_Related_Event"] = "Yes"
+            
+            # Look for debug terms in description
+            if "Description" in data.columns:
+                debug_terms = ['debug', 'breakpoint', 'trace', 'ABAP', 'function module']
+                debug_pattern = '|'.join(debug_terms)
+                
+                data.loc[(data["Debugging_Related_Event"] == "") & 
+                         (data["Description"].str.contains(debug_pattern, case=False, na=False)), 
+                         "Debugging_Related_Event"] = "Yes"
+        
+        # Benign Activity flag
+        if 'Benign_Activity' in data.columns and data['Benign_Activity'].astype(str).eq('').all():
+            log_message("Adding Benign Activity flag logic")
+            
+            # Check for logon/logoff events
+            if "Event" in data.columns:
+                # Logon events
+                data.loc[data["Event"].isin(['AU1']), "Benign_Activity"] = "Logon"
+                
+                # Logoff events
+                data.loc[data["Event"].isin(['AUC', 'AUE']), "Benign_Activity"] = "Logoff"
+                
+                # Session manager events
+                data.loc[data["Event"].isin(['AU6', 'AUG']), "Benign_Activity"] = "Session Manager"
+            
+            # Identify display TCodes if risk_level is Low and no other flags are set
+            if "TCode" in data.columns:
+                # Look for display TCodes (typically end with 03)
+                display_tcodes = [tcode for tcode in data["TCode"].unique() 
+                                 if str(tcode).endswith('03') or str(tcode).endswith('04')]
+                
+                # Only flag as Display if:
+                # - TCode is a display TCode
+                # - Not already categorized as something else
+                # - Not a debugging event (as per user's requirement)
+                data.loc[(data["TCode"].isin(display_tcodes)) & 
+                         (data["Benign_Activity"] == "") &
+                         (data["Debugging_Related_Event"] != "Yes") &
+                         (data["Change_Activity"] == ""), "Benign_Activity"] = "Display"
+        
+        return data
+    
+    def _add_audit_workflow_columns(self, data):
+        """
+        Add audit workflow columns if they don't already exist.
+        
+        Args:
+            data: DataFrame to enhance
+            
+        Returns:
+            DataFrame with audit workflow columns
+        """
+        # Initialize workflow columns if they don't exist
+        workflow_columns = ['Observations', 'Questions', 'Response', 'Conclusion']
+        
+        for col in workflow_columns:
+            if col not in data.columns:
+                data[col] = ""
+        
+        return data
+    
+    def _auto_populate_conclusions(self, data):
+        """
+        Auto-populate conclusions for standard activities based on business rules.
+        
+        Args:
+            data: DataFrame to enhance
+            
+        Returns:
+            DataFrame with populated conclusions
+        """
+        log_message("Auto-populating conclusions for standard activities")
+        
+        # Only populate empty conclusions
+        conclusion_mask = data["Conclusion"] == ""
+        
+        # Rule 1: Benign activity with SysAid ticket
+        if "Benign_Activity" in data.columns and "SYSAID #" in data.columns:
+            benign_mask = (data["Benign_Activity"] != "") & (data["SYSAID #"] != "") & conclusion_mask
+            data.loc[benign_mask, "Conclusion"] = data.loc[benign_mask, "Benign_Activity"].apply(
+                lambda x: f"Activity appears to be appropriate based on SysAid ticket ({x} activity)"
+            )
+        
+        # Rule 2: Display activity with no changes
+        display_mask = (data["Benign_Activity"] == "Display") & (data["Change_Activity"] == "") & conclusion_mask
+        data.loc[display_mask, "Conclusion"] = "Display activity - no changes detected"
+        
+        # Rule 3: Standard session management (logon, logoff, session manager)
+        session_mask = data["Benign_Activity"].isin(["Logon", "Logoff", "Session Manager"]) & conclusion_mask
+        data.loc[session_mask, "Conclusion"] = "Standard session management activity"
+        
+        # Count populated conclusions
+        populated_count = (~conclusion_mask).sum() - (~data["Conclusion"].eq("")).sum()
+        log_message(f"Auto-populated {populated_count} conclusions")
+        
+        return data
     
     def _generate_statistics(self, data) -> Dict[str, Any]:
         """
@@ -315,6 +571,26 @@ class OutputGenerator(ABC):
             
             stats["risk_counts"] = risk_stats
             stats["risk_percentages"] = risk_pct
+        
+        # Calculate statistics on analysis flags
+        if "Table_Maintenance" in data.columns:
+            stats["table_maintenance_count"] = (data["Table_Maintenance"] == "Yes").sum()
+        
+        if "High_Risk_TCode" in data.columns:
+            stats["high_risk_tcode_count"] = (data["High_Risk_TCode"] != "").sum()
+        
+        if "Change_Activity" in data.columns:
+            stats["change_activity_count"] = (data["Change_Activity"] != "").sum()
+        
+        if "Debugging_Related_Event" in data.columns:
+            stats["debugging_count"] = (data["Debugging_Related_Event"] == "Yes").sum()
+        
+        if "Transport_Related_Event" in data.columns:
+            stats["transport_count"] = (data["Transport_Related_Event"] == "Yes").sum()
+        
+        if "Benign_Activity" in data.columns:
+            benign_counts = data["Benign_Activity"].value_counts().to_dict()
+            stats["benign_activity"] = benign_counts
         
         # Get completeness information from record counter
         try:
@@ -374,7 +650,7 @@ class ExcelOutputGenerator(OutputGenerator):
     
     def _create_output_file(self, data, statistics, output_path):
         """
-        Create a formatted Excel output file.
+        Create a formatted Excel output file according to new unified format requirements.
         
         Args:
             data: The prepared session data
@@ -391,26 +667,18 @@ class ExcelOutputGenerator(OutputGenerator):
             # Create a risk condition flag
             has_risk_data = "risk_level" in data.columns
             
-            # Create filtered datasets for special sheets
-            special_sheets = self._create_special_sheets(data)
-            
             # Create Excel writer
             with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
                 wb = writer.book
                 
-                # Create main timeline sheet
-                log_message("Creating main timeline sheet")
-                data.to_excel(writer, sheet_name="Session_Timeline", index=False, na_rep="")
-                ws_main = writer.sheets["Session_Timeline"]
-                self._apply_excel_formatting(ws_main, data, wb)
+                # Create main Unified_Audit_Timeline sheet
+                log_message("Creating main Unified_Audit_Timeline sheet")
+                sheet_name = "Unified_Audit_Timeline"
+                data.to_excel(writer, sheet_name=sheet_name, index=False, na_rep="")
+                ws_main = writer.sheets[sheet_name]
                 
-                # Create special sheets
-                for sheet_name, sheet_data in special_sheets.items():
-                    if not sheet_data.empty:
-                        log_message(f"Creating {sheet_name} sheet")
-                        sheet_data.to_excel(writer, sheet_name=sheet_name, index=False, na_rep="")
-                        ws = writer.sheets[sheet_name]
-                        self._apply_excel_formatting(ws, sheet_data, wb)
+                # Apply formatting to main sheet
+                self._apply_excel_formatting(ws_main, data, wb)
                 
                 # Create summary sheet
                 log_message("Creating Summary sheet")
@@ -451,7 +719,7 @@ class ExcelOutputGenerator(OutputGenerator):
     
     def _format_headers(self, worksheet, df, workbook):
         """
-        Format Excel worksheet headers.
+        Format Excel worksheet headers with color-coded categories.
         
         Args:
             worksheet: The xlsxwriter worksheet
@@ -504,7 +772,7 @@ class ExcelOutputGenerator(OutputGenerator):
     
     def _set_column_widths(self, worksheet, df):
         """
-        Set appropriate column widths.
+        Set appropriate column widths based on content type.
         
         Args:
             worksheet: The xlsxwriter worksheet
@@ -529,6 +797,16 @@ class ExcelOutputGenerator(OutputGenerator):
                 width = 25   # Medium for session IDs
             elif "tcode_description" in col.lower() or "event_description" in col.lower() or "table_description" in col.lower():
                 width = 40   # Wide for descriptive columns
+            elif col in ["Table_Maintenance", "High_Risk_TCode", "Transport_Related_Event", "Debugging_Related_Event"]:
+                width = 20   # Medium for flag columns
+            elif col in ["Change_Activity", "Benign_Activity"]:
+                width = 25   # Medium-wide for activity classification
+            elif col in ["TCode", "Event"]:
+                width = 15   # Standard for code columns
+            elif col in ["User", "Source"]:
+                width = 15   # Standard for basic identifiers
+            elif col in ["Old_Value", "New_Value"]:
+                width = 30   # Wide for change values
             
             worksheet.set_column(i, i, width)
     
@@ -553,88 +831,23 @@ class ExcelOutputGenerator(OutputGenerator):
                 'font_color': font_color
             })
         
-        # Apply conditional formatting for each risk level
+        # Find the column index for risk_level
+        risk_col_idx = None
+        for i, col in enumerate(df.columns):
+            if col == 'risk_level':
+                risk_col_idx = i
+                break
+                
+        if risk_col_idx is None:
+            return
+            
+        # Apply conditional formatting for each risk level to the entire row
         for risk, fmt in risk_formats.items():
             worksheet.conditional_format(1, 0, len(df), len(df.columns) - 1, {
-                'type': 'cell',
-                'criteria': 'equal to',
-                'value': f'"{risk}"',
+                'type': 'formula',
+                'criteria': f'=${chr(65 + risk_col_idx)}2="{risk}"',
                 'format': fmt
             })
-    
-    def _create_special_sheets(self, data):
-        """
-        Create special filtered sheets for the report.
-        
-        Args:
-            data: The main session data
-            
-        Returns:
-            Dict of sheet names to dataframes
-        """
-        special_sheets = {}
-        
-        # Create debug events sheet
-        debug_events = self._extract_debug_events(data)
-        if not debug_events.empty:
-            special_sheets["Debug_Activities"] = debug_events
-        
-        # Create high risk events sheet
-        if "risk_level" in data.columns:
-            high_risk = data[data["risk_level"].isin(["Critical", "High"])]
-            if not high_risk.empty:
-                special_sheets["High_Risk_Events"] = high_risk
-        
-        # Create SysAid tickets sheet
-        if "SYSAID #" in data.columns:
-            sysaid_events = data[data["SYSAID #"] != ""].copy()
-            if not sysaid_events.empty:
-                special_sheets["SysAid_Tickets"] = sysaid_events
-        
-        return special_sheets
-    
-    def _extract_debug_events(self, data):
-        """
-        Extract debug-related events.
-        
-        Args:
-            data: The main session data
-            
-        Returns:
-            DataFrame with debug events
-        """
-        # Create query conditions based on column availability
-        conditions = []
-        
-        # Check for debug markers in Variable_2
-        if 'Variable_2' in data.columns:
-            conditions.append(data['Variable_2'].str.contains('I!|D!|G!', na=False))
-        
-        # FireFighter accounts with high risk activities
-        if 'User' in data.columns and 'risk_level' in data.columns:
-            conditions.append(
-                (data['User'].str.startswith('FF_', na=False)) & 
-                (data['risk_level'].isin(['High', 'Critical']))
-            )
-        
-        # Check for debug mentions in risk description or risk_factors
-        risk_desc_col = 'risk_description' if 'risk_description' in data.columns else 'risk_factors'
-        if risk_desc_col in data.columns:
-            conditions.append(
-                data[risk_desc_col].str.contains('debug session detected|dynamic abap code execution',
-                                               case=False, na=False)
-            )
-        
-        # Combine conditions with OR logic
-        if conditions:
-            combined_condition = conditions[0]
-            for condition in conditions[1:]:
-                combined_condition = combined_condition | condition
-            debug_events = data[combined_condition]
-        else:
-            debug_events = pd.DataFrame(columns=data.columns)
-        
-        return debug_events
     
     def _create_summary_sheet(self, workbook, writer, statistics):
         """
@@ -683,7 +896,7 @@ class ExcelOutputGenerator(OutputGenerator):
             summary_worksheet.write(0, col_num, col_name, header_format)
         
         # Set column widths
-        summary_worksheet.set_column(0, 0, 15)
+        summary_worksheet.set_column(0, 0, 20)
         summary_worksheet.set_column(1, 1, 15)
         
         # Add a chart if we have risk data
@@ -709,8 +922,10 @@ class ExcelOutputGenerator(OutputGenerator):
             # Insert the chart into the summary worksheet
             summary_worksheet.insert_chart('D2', chart)
         
-        # Add session statistics
+        # Activity Analysis Statistics
         row = 10
+        
+        # Add session statistics
         summary_worksheet.write(row, 0, "Session Statistics:", header_format)
         row += 1
         summary_worksheet.write(row, 0, "Total Records:")
@@ -721,9 +936,55 @@ class ExcelOutputGenerator(OutputGenerator):
         row += 1
         summary_worksheet.write(row, 0, "Unique Users:")
         summary_worksheet.write(row, 1, statistics["user_count"])
+        row += 2
+        
+        # Add activity statistics if available
+        if any(x in statistics for x in ["table_maintenance_count", "high_risk_tcode_count", 
+                                        "change_activity_count", "debugging_count", "transport_count"]):
+            summary_worksheet.write(row, 0, "Activity Analysis:", header_format)
+            row += 1
+            
+            if "table_maintenance_count" in statistics:
+                summary_worksheet.write(row, 0, "Table Maintenance:")
+                summary_worksheet.write(row, 1, statistics["table_maintenance_count"])
+                row += 1
+                
+            if "high_risk_tcode_count" in statistics:
+                summary_worksheet.write(row, 0, "High Risk TCodes:")
+                summary_worksheet.write(row, 1, statistics["high_risk_tcode_count"])
+                row += 1
+                
+            if "change_activity_count" in statistics:
+                summary_worksheet.write(row, 0, "Change Activities:")
+                summary_worksheet.write(row, 1, statistics["change_activity_count"])
+                row += 1
+                
+            if "debugging_count" in statistics:
+                summary_worksheet.write(row, 0, "Debugging Events:")
+                summary_worksheet.write(row, 1, statistics["debugging_count"])
+                row += 1
+                
+            if "transport_count" in statistics:
+                summary_worksheet.write(row, 0, "Transport Events:")
+                summary_worksheet.write(row, 1, statistics["transport_count"])
+                row += 1
+            
+            row += 1
+        
+        # Add benign activity breakdown if available
+        if "benign_activity" in statistics and statistics["benign_activity"]:
+            summary_worksheet.write(row, 0, "Benign Activity Breakdown:", header_format)
+            row += 1
+            
+            for activity, count in statistics["benign_activity"].items():
+                if activity:  # Only show non-empty activity types
+                    summary_worksheet.write(row, 0, activity + ":")
+                    summary_worksheet.write(row, 1, count)
+                    row += 1
+                    
+            row += 1
         
         # Add timestamp
-        row += 2
         summary_worksheet.write(row, 0, "Generated On:", header_format)
         summary_worksheet.write(row, 1, statistics["timestamp"])
         
@@ -777,51 +1038,113 @@ class ExcelOutputGenerator(OutputGenerator):
             writer: The pandas ExcelWriter
         """
         # Create header legend
-        header_legend = pd.DataFrame({
-            'Source': list(SOURCE_COLORS.keys()),
-            'Description': [
-                'SM20 Security Audit Log fields',
-                'CDHDR Change Document Header fields',
-                'CDPOS Change Document Item fields',
-                'Generated or derived fields by the tool',
-                'SysAid ticket information fields'
-            ]
-        })
+        header_legend_data = []
+        header_legend_data.append(["Header Color Legend", ""])
+        for source, color in SOURCE_COLORS.items():
+            description = ""
+            if source == "SM20":
+                description = "SM20 Security Audit Log fields"
+            elif source == "CDHDR":
+                description = "CDHDR Change Document Header fields"
+            elif source == "CDPOS":
+                description = "CDPOS Change Document Item fields"
+            elif source == "Generated":
+                description = "Generated or derived fields by the tool"
+            elif source == "SysAid":
+                description = "SysAid ticket information fields"
+            elif source == "Eviden":
+                description = "Eviden-specific columns (light green)"
+            elif source == "Analysis":
+                description = "Analysis flag columns (peach)"
+            
+            header_legend_data.append([source, description])
         
-        # Create risk legend
-        risk_legend = pd.DataFrame({
-            'Risk Level': list(RISK_COLORS.keys()),
-            'Description': [
-                'Critical Risk - Requires immediate attention',
-                'High Risk - Significant security concern',
-                'Medium Risk - Potential security issue',
-                'Low Risk - Minimal security concern'
-            ]
-        })
+        # Add blank row for spacing
+        header_legend_data.append(["", ""])
         
-        # Write legends to sheet
-        header_legend.to_excel(writer, sheet_name="Legend", index=False, startrow=0, na_rep="")
-        risk_legend.to_excel(writer, sheet_name="Legend", index=False, startrow=len(header_legend) + 2, na_rep="")
+        # Add risk level legend
+        header_legend_data.append(["Risk Level Legend", ""])
+        for risk, color in RISK_COLORS.items():
+            description = ""
+            if risk == "Critical":
+                description = "Critical Risk - Requires immediate attention"
+            elif risk == "High":
+                description = "High Risk - Significant security concern"
+            elif risk == "Medium":
+                description = "Medium Risk - Potential security issue"
+            elif risk == "Low":
+                description = "Low Risk - Minimal security concern"
+            
+            header_legend_data.append([risk, description])
+        
+        # Add blank row for spacing
+        header_legend_data.append(["", ""])
+        
+        # Add analysis flags legend
+        header_legend_data.append(["Analysis Flags Legend", ""])
+        
+        flag_descriptions = [
+            ["Table_Maintenance", "Indicates table maintenance activities (SM30, SM31, SE16, etc.)"],
+            ["High_Risk_TCode", "Categorizes high-risk transaction codes by purpose (Development, Security, etc.)"],
+            ["Change_Activity", "Shows activity type using standard codes (01-Insert, 02-Update, 06-Delete, etc.)"],
+            ["Transport_Related_Event", "Flags transport-related activities (STMS, SE01, SE09, etc.)"],
+            ["Debugging_Related_Event", "Flags debugging activities (SE24, SE37, SE38, breakpoints, etc.)"],
+            ["Benign_Activity", "Identifies standard activities (Logon, Logoff, Display, Session Manager)"]
+        ]
+        
+        for flag_desc in flag_descriptions:
+            header_legend_data.append(flag_desc)
+        
+        # Write legend to sheet
+        legend_df = pd.DataFrame(header_legend_data, columns=["Category", "Description"])
+        legend_df.to_excel(writer, sheet_name="Legend", index=False, header=False)
         
         # Get legend worksheet
         legend_worksheet = writer.sheets["Legend"]
         
-        # Format header legend
-        for idx, source in enumerate(header_legend["Source"]):
-            color = SOURCE_COLORS.get(source, "#FFFFFF")
-            cell_fmt = workbook.add_format({'bg_color': color, 'border': 1})
-            legend_worksheet.write(idx + 1, 0, source, cell_fmt)
+        # Define formats
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#4F81BD',
+            'font_color': 'white',
+            'border': 1
+        })
         
-        # Format risk legend
-        for idx, risk in enumerate(risk_legend["Risk Level"]):
-            color = RISK_COLORS.get(risk, "#FFFFFF")
+        subheader_format = workbook.add_format({
+            'bold': True,
+            'italic': True
+        })
+        
+        # Apply formatting to headers
+        legend_worksheet.write(0, 0, "Category", header_format)
+        legend_worksheet.write(0, 1, "Description", header_format)
+        
+        # Format section headers
+        # Header Color Legend
+        legend_worksheet.write(1, 0, "Header Color Legend", subheader_format)
+        
+        # Add color samples for header colors
+        row = 2
+        for source, color in SOURCE_COLORS.items():
+            cell_fmt = workbook.add_format({'bg_color': color})
+            legend_worksheet.write(row, 0, source, cell_fmt)
+            row += 1
+            
+        # Risk Level Legend (after the blank row)
+        row += 1  # Skip the blank row
+        legend_worksheet.write(row, 0, "Risk Level Legend", subheader_format)
+        row += 1
+        
+        # Add color samples for risk levels
+        for risk, color in RISK_COLORS.items():
             font_color = "#FFFFFF" if risk == "Critical" else "#000000"
-            cell_fmt = workbook.add_format({'bg_color': color, 'font_color': font_color, 'border': 1})
-            legend_worksheet.write(idx + len(header_legend) + 3, 0, risk, cell_fmt)
+            cell_fmt = workbook.add_format({'bg_color': color, 'font_color': font_color})
+            legend_worksheet.write(row, 0, risk, cell_fmt)
+            row += 1
         
         # Set column widths
-        legend_worksheet.set_column(0, 0, 15)
-        legend_worksheet.set_column(1, 1, 50)
+        legend_worksheet.set_column(0, 0, 25)
+        legend_worksheet.set_column(1, 1, 80)
 
 
 class CsvOutputGenerator(OutputGenerator):
@@ -850,25 +1173,14 @@ class CsvOutputGenerator(OutputGenerator):
             # Write main data to CSV
             data.to_csv(output_path, index=False)
             
-            # Create special sheets as separate CSV files
-            special_sheets = self._create_special_sheets(data)
-            
-            # Get base name and directory for additional CSVs
+            # Create statistics summary file
             base_dir = os.path.dirname(output_path)
             base_name = os.path.splitext(os.path.basename(output_path))[0]
-            
-            # Create CSV files for special sheets
-            for sheet_name, sheet_data in special_sheets.items():
-                if not sheet_data.empty:
-                    special_path = os.path.join(base_dir, f"{base_name}_{sheet_name}.csv")
-                    sheet_data.to_csv(special_path, index=False)
-                    log_message(f"Created special sheet CSV: {special_path}")
-            
-            # Create statistics summary file
             stats_path = os.path.join(base_dir, f"{base_name}_Summary.csv")
             self._create_stats_summary_csv(statistics, stats_path)
             
             log_message(f"CSV report saved to {output_path}")
+            log_message(f"Summary statistics saved to {stats_path}")
             return True
             
         except Exception as e:
@@ -911,6 +1223,36 @@ class CsvOutputGenerator(OutputGenerator):
                                 statistics["risk_counts"]["Low"],
                                 f"{statistics['risk_percentages']['Low']:.1f}%"])
         
+        # Add activity statistics if available
+        if any(x in statistics for x in ["table_maintenance_count", "high_risk_tcode_count", 
+                                         "change_activity_count", "debugging_count", "transport_count"]):
+            summary_rows.append([])  # Empty row as separator
+            summary_rows.append(["Activity Analysis", "Count"])
+            
+            if "table_maintenance_count" in statistics:
+                summary_rows.append(["Table Maintenance", statistics["table_maintenance_count"]])
+                
+            if "high_risk_tcode_count" in statistics:
+                summary_rows.append(["High Risk TCodes", statistics["high_risk_tcode_count"]])
+                
+            if "change_activity_count" in statistics:
+                summary_rows.append(["Change Activities", statistics["change_activity_count"]])
+                
+            if "debugging_count" in statistics:
+                summary_rows.append(["Debugging Events", statistics["debugging_count"]])
+                
+            if "transport_count" in statistics:
+                summary_rows.append(["Transport Events", statistics["transport_count"]])
+        
+        # Add benign activity breakdown if available
+        if "benign_activity" in statistics and statistics["benign_activity"]:
+            summary_rows.append([])  # Empty row as separator
+            summary_rows.append(["Benign Activity", "Count"])
+            
+            for activity, count in statistics["benign_activity"].items():
+                if activity:  # Only show non-empty activity types
+                    summary_rows.append([activity, count])
+        
         # Add completeness information if available
         if "completeness" in statistics:
             summary_rows.append([])  # Empty row as separator
@@ -932,52 +1274,3 @@ class CsvOutputGenerator(OutputGenerator):
             import csv
             writer = csv.writer(f)
             writer.writerows(summary_rows)
-        
-        log_message(f"Statistics summary saved to {output_path}")
-    
-    def _create_special_sheets(self, data):
-        """
-        Create special filtered datasets.
-        
-        Args:
-            data: The main session data
-            
-        Returns:
-            Dict of sheet names to dataframes
-        """
-        special_sheets = {}
-        
-        # Create high risk events sheet
-        if "risk_level" in data.columns:
-            high_risk = data[data["risk_level"].isin(["Critical", "High"])]
-            if not high_risk.empty:
-                special_sheets["High_Risk_Events"] = high_risk
-        
-        # Create debug events sheet if we can detect them
-        debug_events = pd.DataFrame()
-        
-        # Check for debug markers in Variable_2
-        if 'Variable_2' in data.columns:
-            debug_variable = data[data['Variable_2'].str.contains('I!|D!|G!', na=False)]
-            if not debug_variable.empty:
-                debug_events = pd.concat([debug_events, debug_variable])
-        
-        # FireFighter accounts with high risk
-        if 'User' in data.columns and 'risk_level' in data.columns:
-            ff_high_risk = data[(data['User'].str.startswith('FF_', na=False)) & 
-                              (data['risk_level'].isin(['High', 'Critical']))]
-            if not ff_high_risk.empty:
-                debug_events = pd.concat([debug_events, ff_high_risk])
-        
-        # Remove duplicates if any
-        if not debug_events.empty:
-            debug_events = debug_events.drop_duplicates()
-            special_sheets["Debug_Activities"] = debug_events
-        
-        # Create SysAid tickets sheet
-        if "SYSAID #" in data.columns:
-            sysaid_events = data[data["SYSAID #"] != ""].copy()
-            if not sysaid_events.empty:
-                special_sheets["SysAid_Tickets"] = sysaid_events
-        
-        return special_sheets

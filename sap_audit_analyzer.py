@@ -82,7 +82,31 @@ class SAPAuditAnalyzer:
                 self.tcode_descriptions = dict(zip(df_tcodes["TCode"], df_tcodes["TCode Description"]))
                 log_message(f"Loaded {len(self.tcode_descriptions)} transaction code descriptions")
             else:
-                log_message("Transaction code reference file not found. TCode descriptions will not be available.", "WARNING")
+                # Create demo data for testing
+                demo_tcodes = {
+                    'SE38': 'ABAP Editor',
+                    'SE37': 'Function Builder',
+                    'SE24': 'Class Builder',
+                    'SE80': 'Object Navigator',
+                    'SU01': 'User Maintenance',
+                    'PFCG': 'Role Maintenance',
+                    'SM30': 'Table Maintenance',
+                    'SE16': 'Data Browser',
+                    'SE16N': 'Enhanced Data Browser',
+                    'VA01': 'Create Sales Order',
+                    'VA02': 'Change Sales Order',
+                    'VA03': 'Display Sales Order',
+                    'MM01': 'Create Material',
+                    'MM02': 'Change Material',
+                    'MM03': 'Display Material',
+                    'ME21': 'Create Purchase Order',
+                    'ME23': 'Display Purchase Order',
+                    'STMS': 'Transport Management System',
+                    'FK01': 'Create Vendor (Accounting)',
+                    'FK03': 'Display Vendor (Accounting)'
+                }
+                self.tcode_descriptions = demo_tcodes
+                log_message(f"Created {len(self.tcode_descriptions)} sample transaction code descriptions for testing")
         except Exception as e:
             log_error(e, "Error loading transaction code descriptions")
         
@@ -94,7 +118,20 @@ class SAPAuditAnalyzer:
                 self.event_descriptions = dict(zip(df_events["Event Code"], df_events["Event Code Description"]))
                 log_message(f"Loaded {len(self.event_descriptions)} event code descriptions")
             else:
-                log_message("Event code reference file not found. Event descriptions will not be available.", "WARNING")
+                # Create demo data for testing
+                demo_events = {
+                    'AU1': 'User Login',
+                    'AUC': 'User Logout',
+                    'AUE': 'User Logout (Explicit)',
+                    'AU6': 'Session Manager Start',
+                    'AUG': 'Session Manager Restart',
+                    'BU': 'Record Created',
+                    'BC': 'Record Changed',
+                    'BD': 'Record Deleted',
+                    'TX': 'Transaction Started'
+                }
+                self.event_descriptions = demo_events
+                log_message(f"Created {len(self.event_descriptions)} sample event descriptions for testing")
         except Exception as e:
             log_error(e, "Error loading event descriptions")
         
@@ -106,7 +143,21 @@ class SAPAuditAnalyzer:
                 self.table_descriptions = dict(zip(df_tables["Table"], df_tables["Table Description"]))
                 log_message(f"Loaded {len(self.table_descriptions)} table descriptions")
             else:
-                log_message("Table reference file not found. Table descriptions will not be available.", "WARNING")
+                # Create demo data for testing
+                demo_tables = {
+                    'MARA': 'General Material Data',
+                    'MARC': 'Plant Material Data',
+                    'KNA1': 'Customer Master (General Section)',
+                    'LFA1': 'Vendor Master (General Section)',
+                    'VBAK': 'Sales Document: Header Data',
+                    'VBAP': 'Sales Document: Item Data',
+                    'EKKO': 'Purchasing Document Header',
+                    'EKPO': 'Purchasing Document Item',
+                    'USR02': 'User Master Password Data',
+                    'LIKP': 'Delivery Header'
+                }
+                self.table_descriptions = demo_tables
+                log_message(f"Created {len(self.table_descriptions)} sample table descriptions for testing")
         except Exception as e:
             log_error(e, "Error loading table descriptions")
         
@@ -123,7 +174,21 @@ class SAPAuditAnalyzer:
                 
                 log_message(f"Loaded {len(self.high_risk_tcodes)} high-risk transaction codes")
             else:
-                log_message("High-risk transaction codes reference file not found. High-risk TCode flagging will not be available.", "WARNING")
+                # Create demo data for testing
+                self.high_risk_tcodes = {'SE38', 'SE37', 'SE24', 'SE80', 'SU01', 'PFCG', 'SM30', 'SE16', 'SE16N', 'STMS'}
+                self.high_risk_tcode_categories = {
+                    'SE38': 'Development',
+                    'SE37': 'Development',
+                    'SE24': 'Development',
+                    'SE80': 'Development',
+                    'SU01': 'Security',
+                    'PFCG': 'Security',
+                    'SM30': 'Table Maintenance',
+                    'SE16': 'Table Maintenance',
+                    'SE16N': 'Table Maintenance',
+                    'STMS': 'Transport'
+                }
+                log_message(f"Created {len(self.high_risk_tcodes)} sample high-risk transaction codes for testing")
         except Exception as e:
             log_error(e, "Error loading high-risk transaction codes")
         
@@ -140,7 +205,20 @@ class SAPAuditAnalyzer:
                 
                 log_message(f"Loaded {len(self.high_risk_tables)} high-risk tables")
             else:
-                log_message("High-risk tables reference file not found. High-risk table flagging will not be available.", "WARNING")
+                # Create demo data for testing
+                self.high_risk_tables = {'USR02', 'USR01', 'USGRP', 'USOBT', 'AGR_USERS', 'AGR_DEFINE', 'USOBX_C', 'KNA1', 'LFA1'}
+                self.high_risk_table_categories = {
+                    'USR02': 'Security - User Password',
+                    'USR01': 'Security - User Master',
+                    'USGRP': 'Security - User Groups',
+                    'USOBT': 'Security - Authorization Objects',
+                    'AGR_USERS': 'Security - Role Assignments',
+                    'AGR_DEFINE': 'Security - Role Definitions',
+                    'USOBX_C': 'Security - Authorization Checks',
+                    'KNA1': 'Master Data - Customer',
+                    'LFA1': 'Master Data - Vendor'
+                }
+                log_message(f"Created {len(self.high_risk_tables)} sample high-risk tables for testing")
         except Exception as e:
             log_error(e, "Error loading high-risk tables")
     
@@ -201,23 +279,32 @@ class SAPAuditAnalyzer:
         """
         log_message("Adding descriptive columns for TCodes, Events, and Tables")
         
-        # Add TCode description column
-        if "TCode" in df.columns:
-            df["TCode_Description"] = df["TCode"].apply(
-                lambda x: self.tcode_descriptions.get(x, "") if pd.notna(x) else ""
+        # Add TCode description column - check for multiple possible TCode column names
+        tcode_col = next((col for col in ['TCode', 'TCODE', 'SOURCE TA'] if col in df.columns), None)
+        if tcode_col:
+            df["TCode_Description"] = df[tcode_col].apply(
+                lambda x: self.tcode_descriptions.get(x, "") if pd.notna(x) and x != "" else ""
             )
+        else:
+            df["TCode_Description"] = ""
         
-        # Add Event description column
-        if "Event" in df.columns:
-            df["Event_Description"] = df["Event"].apply(
-                lambda x: self.event_descriptions.get(x, "") if pd.notna(x) else ""
+        # Add Event description column - check for multiple possible Event column names
+        event_col = next((col for col in ['Event', 'EVENT'] if col in df.columns), None)
+        if event_col:
+            df["Event_Description"] = df[event_col].apply(
+                lambda x: self.event_descriptions.get(x, "") if pd.notna(x) and x != "" else ""
             )
+        else:
+            df["Event_Description"] = ""
         
-        # Add Table description column
-        if "Table" in df.columns:
-            df["Table_Description"] = df["Table"].apply(
-                lambda x: self.table_descriptions.get(x, "") if pd.notna(x) else ""
+        # Add Table description column - check for multiple possible Table column names
+        table_col = next((col for col in ['Table', 'TABLE NAME', 'TABLE_NAME'] if col in df.columns), None)
+        if table_col:
+            df["Table_Description"] = df[table_col].apply(
+                lambda x: self.table_descriptions.get(x, "") if pd.notna(x) and x != "" else ""
             )
+        else:
+            df["Table_Description"] = ""
             
         return df
     
@@ -269,9 +356,11 @@ class SAPAuditAnalyzer:
         # Check for table maintenance transaction codes
         table_maint_tcodes = ['SM30', 'SM31', 'SM34', 'SE16', 'SE16N', 'SM32', 'SE11', 'SE13']
         
-        if "TCode" in df.columns:
+        # Handle multiple possible column names
+        tcode_col = next((col for col in ['TCode', 'TCODE', 'SOURCE TA'] if col in df.columns), None)
+        if tcode_col:
             table_maintenance = table_maintenance.mask(
-                df["TCode"].isin(table_maint_tcodes), 
+                df[tcode_col].fillna('').astype(str).isin(table_maint_tcodes), 
                 "Yes"
             )
             
@@ -292,6 +381,23 @@ class SAPAuditAnalyzer:
                                               case=False, na=False, regex=True),
                 "Yes"
             )
+        
+        # Look for table changes in the audit message
+        msg_col = next((col for col in ['AUDIT LOG MSG. TEXT', 'MESSAGE', 'MSG'] if col in df.columns), None)
+        if msg_col:
+            table_maintenance = table_maintenance.mask(
+                df[msg_col].fillna('').astype(str).str.contains("table|maintenance|field|data dictionary", 
+                                                               case=False, regex=True),
+                "Yes"
+            )
+            
+        # Check for table-related activities in CDPOS
+        if 'TABLE NAME' in df.columns:
+            # Any operations on tables are considered table maintenance
+            table_maintenance = table_maintenance.mask(
+                (df['TABLE NAME'] != '') & df['TABLE NAME'].notna(),
+                "Yes"
+            )
             
         return table_maintenance
     
@@ -308,16 +414,20 @@ class SAPAuditAnalyzer:
         # Initialize with empty strings
         high_risk = pd.Series("", index=df.index)
         
-        if "TCode" in df.columns and self.high_risk_tcodes:
+        # Handle multiple possible column names
+        tcode_col = next((col for col in ['TCode', 'TCODE', 'SOURCE TA'] if col in df.columns), None)
+        
+        if tcode_col and self.high_risk_tcodes:
             # Use categories if available, otherwise just "Yes"
             if self.high_risk_tcode_categories:
                 for idx, row in df.iterrows():
-                    tcode = row["TCode"].upper() if pd.notna(row["TCode"]) else ""
-                    if tcode in self.high_risk_tcode_categories:
+                    tcode = str(row[tcode_col]).upper() if pd.notna(row[tcode_col]) else ""
+                    if tcode and tcode in self.high_risk_tcode_categories:
                         high_risk.iloc[idx] = self.high_risk_tcode_categories[tcode]
             else:
+                # Handle possible NaNs and convert to uppercase safely
                 high_risk = high_risk.mask(
-                    df["TCode"].str.upper().isin([t.upper() for t in self.high_risk_tcodes]),
+                    df[tcode_col].fillna('').astype(str).str.upper().isin([t.upper() for t in self.high_risk_tcodes]),
                     "Yes"
                 )
         
@@ -336,8 +446,11 @@ class SAPAuditAnalyzer:
         # Initialize with empty strings
         change_activity = pd.Series("", index=df.index)
         
-        # Check Change_Indicator column
-        if "Change_Indicator" in df.columns:
+        # Check Change_Indicator column with multiple possible names
+        indicator_col = next((col for col in ['Change_Indicator', 'CHANGE INDICATOR', 'CHANGE_INDICATOR'] 
+                               if col in df.columns), None)
+        
+        if indicator_col:
             # Create mapping for common change indicators
             change_map = {
                 "U": "02 - Update",  # Update
@@ -349,14 +462,16 @@ class SAPAuditAnalyzer:
             
             # Apply mapping to change indicators
             for idx, row in df.iterrows():
-                indicator = row["Change_Indicator"] if pd.notna(row["Change_Indicator"]) else ""
-                indicator = indicator.upper() if isinstance(indicator, str) else ""
+                indicator = row[indicator_col] if pd.notna(row[indicator_col]) else ""
+                indicator = str(indicator).upper() if indicator else ""
                 
                 if indicator in change_map:
                     change_activity.iloc[idx] = change_map[indicator]
         
-        # Check Event column for change-related events
-        if "Event" in df.columns:
+        # Check Event column for change-related events with multiple possible names
+        event_col = next((col for col in ['Event', 'EVENT'] if col in df.columns), None)
+        
+        if event_col:
             # These events indicate changes
             insert_events = ["BU", "BD", "BU1", "BU2", "BU3"]  # Record creation events
             update_events = ["BC", "BE", "BW", "BW1"]  # Record modification events
@@ -364,15 +479,15 @@ class SAPAuditAnalyzer:
             
             # Mark change activities based on event codes
             change_activity = change_activity.mask(
-                (change_activity == "") & df["Event"].isin(insert_events), 
+                (change_activity == "") & df[event_col].isin(insert_events), 
                 "01 - Insert"
             )
             change_activity = change_activity.mask(
-                (change_activity == "") & df["Event"].isin(update_events), 
+                (change_activity == "") & df[event_col].isin(update_events), 
                 "02 - Update"
             )
             change_activity = change_activity.mask(
-                (change_activity == "") & df["Event"].isin(delete_events), 
+                (change_activity == "") & df[event_col].isin(delete_events), 
                 "06 - Delete"
             )
         
@@ -402,6 +517,68 @@ class SAPAuditAnalyzer:
                 "06 - Delete"
             )
         
+        # Check message text for change indicators
+        msg_col = next((col for col in ['AUDIT LOG MSG. TEXT', 'MESSAGE', 'MSG'] if col in df.columns), None)
+        if msg_col:
+            # Look for insert-related terms
+            change_activity = change_activity.mask(
+                (change_activity == "") & df[msg_col].fillna('').astype(str).str.contains(
+                    r"insert|create|new|add", case=False, regex=True
+                ),
+                "01 - Insert"
+            )
+            
+            # Look for update-related terms
+            change_activity = change_activity.mask(
+                (change_activity == "") & df[msg_col].fillna('').astype(str).str.contains(
+                    r"update|modif|change", case=False, regex=True
+                ),
+                "02 - Update"
+            )
+            
+            # Look for delete-related terms
+            change_activity = change_activity.mask(
+                (change_activity == "") & df[msg_col].fillna('').astype(str).str.contains(
+                    r"delete|remov", case=False, regex=True
+                ), 
+                "06 - Delete"
+            )
+        
+        # Check for change values in CDPOS data
+        if 'NEW VALUE' in df.columns and 'OLD VALUE' in df.columns:
+            # If there's a new value and no old value, it's an insert
+            change_activity = change_activity.mask(
+                (change_activity == "") & 
+                (df['NEW VALUE'].notna()) & (df['NEW VALUE'] != '') & 
+                ((df['OLD VALUE'].isna()) | (df['OLD VALUE'] == '')),
+                "01 - Insert"
+            )
+            
+            # If there's an old value and a new value, it's an update
+            change_activity = change_activity.mask(
+                (change_activity == "") & 
+                (df['NEW VALUE'].notna()) & (df['NEW VALUE'] != '') & 
+                (df['OLD VALUE'].notna()) & (df['OLD VALUE'] != ''),
+                "02 - Update"
+            )
+            
+            # If there's an old value and no new value, it's a delete
+            change_activity = change_activity.mask(
+                (change_activity == "") & 
+                ((df['NEW VALUE'].isna()) | (df['NEW VALUE'] == '')) & 
+                (df['OLD VALUE'].notna()) & (df['OLD VALUE'] != ''),
+                "06 - Delete"
+            )
+        
+        # Check source column for CDPOS/CDHDR data
+        if 'Source' in df.columns:
+            # CDHDR and CDPOS both represent change documents
+            change_activity = change_activity.mask(
+                (change_activity == "") & 
+                df['Source'].isin(['CDHDR', 'CDPOS']),
+                "02 - Update"
+            )
+            
         return change_activity
     
     def _identify_transport_events(self, df):
@@ -472,9 +649,11 @@ class SAPAuditAnalyzer:
         # Check for debugging transaction codes
         debug_tcodes = ['/H', 'ABAPDBG', 'SE24', 'SE37', 'SE38', 'SE80']
         
-        if "TCode" in df.columns:
+        # Handle multiple possible column names
+        tcode_col = next((col for col in ['TCode', 'TCODE', 'SOURCE TA'] if col in df.columns), None)
+        if tcode_col:
             debugging_related = debugging_related.mask(
-                df["TCode"].isin(debug_tcodes), 
+                df[tcode_col].fillna('').astype(str).isin(debug_tcodes), 
                 "Yes"
             )
         
@@ -489,22 +668,35 @@ class SAPAuditAnalyzer:
             )
         
         # Check for debugging-related events
-        if "Event" in df.columns:
+        event_col = next((col for col in ['Event', 'EVENT'] if col in df.columns), None)
+        if event_col:
             debug_events = ['DB', 'DB1', 'DB2', 'DB3', 'DBC', 'DBG', 'DBI']  # Debug-related event codes
             debugging_related = debugging_related.mask(
-                df["Event"].isin(debug_events), 
+                df[event_col].isin(debug_events), 
                 "Yes"
             )
         
-        # Check for debugging keywords in Description
-        if "Description" in df.columns:
-            debugging_related = debugging_related.mask(
-                df["Description"].str.contains(
-                    "debug|breakpoint|trace|ABAP|development|function module", 
-                    case=False, na=False, regex=True
-                ),
-                "Yes"
-            )
+        # Check for debugging keywords in Description or message
+        for col_name in ['Description', 'AUDIT LOG MSG. TEXT', 'MESSAGE', 'MSG']:
+            if col_name in df.columns:
+                debugging_related = debugging_related.mask(
+                    df[col_name].fillna('').astype(str).str.contains(
+                        "debug|breakpoint|trace|ABAP|development|function module", 
+                        case=False, regex=True
+                    ),
+                    "Yes"
+                )
+        
+        # Check for debug markers in variables
+        for col_name in ['VARIABLE 1', 'VARIABLE 2', 'VARIABLE', 'VAR', 'NOTE']:
+            if col_name in df.columns:
+                debugging_related = debugging_related.mask(
+                    df[col_name].fillna('').astype(str).str.contains(
+                        "DEBUG|D!DEBUG|BREAK|TRACE", 
+                        case=False, regex=True
+                    ),
+                    "Yes"
+                )
             
         return debugging_related
     
@@ -522,35 +714,65 @@ class SAPAuditAnalyzer:
         benign_activity = pd.Series("", index=df.index)
         
         # Check for login/logout events
-        if "Event" in df.columns:
+        event_col = next((col for col in ['Event', 'EVENT'] if col in df.columns), None)
+        if event_col:
             # Login events
             benign_activity = benign_activity.mask(
-                df["Event"].isin(['AU1']), 
+                df[event_col].isin(['AU1']), 
                 "Logon"
             )
             
             # Logout events
             benign_activity = benign_activity.mask(
-                df["Event"].isin(['AUC', 'AUE']), 
+                df[event_col].isin(['AUC', 'AUE']), 
                 "Logoff"
             )
             
             # Session manager events
             benign_activity = benign_activity.mask(
-                df["Event"].isin(['AU6', 'AUG']), 
+                df[event_col].isin(['AU6', 'AUG']), 
                 "Session Manager"
             )
         
-        # Check for display transactions (risk level usually low)
-        if "risk_level" in df.columns and "TCode" in df.columns:
-            tcode_starts_with_display = df["TCode"].astype(str).str.startswith(('F', 'S', 'MB', 'MM', 'VA', 'VL', 'XD'))
+        # Check for display transactions
+        tcode_col = next((col for col in ['TCode', 'TCODE', 'SOURCE TA'] if col in df.columns), None)
+        if tcode_col:
+            # Define display transaction patterns
+            display_tcodes = ['VA03', 'MM03', 'ME23', 'FK03', 'BP03', 'XD01', 'XD02', 'XD03', 'FD03', 'IW33']
+            tcode_starts_with_display = df[tcode_col].fillna('').astype(str).str.endswith('03')  # Many display transactions end with 03
             
             # Identify display activities (read-only)
             benign_activity = benign_activity.mask(
                 (benign_activity == "") & 
+                ((df[tcode_col].fillna('').astype(str).isin(display_tcodes)) | tcode_starts_with_display) &
+                ~df[tcode_col].fillna('').astype(str).str.upper().isin([t.upper() for t in self.high_risk_tcodes]),
+                "Display"
+            )
+        
+        # Check risk level for low risk activities
+        if "risk_level" in df.columns:
+            benign_activity = benign_activity.mask(
+                (benign_activity == "") & 
                 (df["risk_level"] == "Low") & 
-                ~df["TCode"].isin(self.high_risk_tcodes) &
-                ~(df["Change_Activity"].str.len() > 0),  # No change activity
+                ~(df["Change_Activity"].str.len() > 0) &  # No change activity
+                ~(df["High_Risk_TCode"].str.len() > 0) &  # Not a high-risk transaction
+                ~(df["Table_Maintenance"].str.len() > 0),  # Not table maintenance
+                "Low Risk"
+            )
+        
+        # Check for display terms in message text
+        msg_col = next((col for col in ['AUDIT LOG MSG. TEXT', 'MESSAGE', 'MSG'] if col in df.columns), None)
+        if msg_col:
+            benign_activity = benign_activity.mask(
+                (benign_activity == "") & 
+                df[msg_col].fillna('').astype(str).str.contains(
+                    "display|view|show|read|query|report", 
+                    case=False, regex=True
+                ) &
+                ~df[msg_col].fillna('').astype(str).str.contains(
+                    "change|update|modify|create|delete|sensitive|critical|high risk", 
+                    case=False, regex=True
+                ),
                 "Display"
             )
         

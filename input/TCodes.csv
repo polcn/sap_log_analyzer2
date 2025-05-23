@@ -66,3 +66,18 @@ MB1B,Transfer Posting
 MB1C,Other Goods Receipt
 MB5B,Stock List
 MIGO,Goods Movement
+S000,SAP Standard Menu (initial screen)
+SESSION_MANAGER,Initial transaction for the SAP Easy Access menu
+SE16,Data Browser / Display Table Contents
+SE16N,General Table Display
+SU53,Display last authorization check / Last Authorization Error
+VL33N,Display Inbound Delivery
+SH02,"(No specific widely recognized description, often appears in lists of common Basis Tcodes like System Logs, Jobs, etc. but not a direct function)"
+SMQ2,qRFC Monitor (Inbound Queue)
+/SCWM/PRDI,Maintain Inbound Deliveries (Extended Warehouse Management - EWM)
+RFC/SCWM/INB_DLV_SAV,"(This appears to be a function module or RFC-enabled function, not a direct TCode. TCodes for EWM deliveries are typically in the format /SCWM/PRDO, /SCWM/GR, etc. ""RFC/SCWM/INB_DLV_SAV"" is likely related to saving inbound delivery data via RFC.)"
+SE93,Maintain Transaction Codes
+RMPS_SET_SUBSTITUTE,Set up substitution in SAP Workflow (for users)
+SU01D,"Display User (SU01 is for User Maintenance, SU01D is specifically for display)"
+VL32N,Change Inbound Delivery (Receiving of Imported Items)
+ME23N,Display Purchase Order
